@@ -855,6 +855,7 @@ flashcache_dm_io_async_vm(struct cache_c *dmc, unsigned int num_regions,
 		.notify.fn = fn,
 		.notify.context = context,
 		.client = flashcache_io_client,
+		.submit_bio = 1,
 	};
 
 	error = dm_io(&io_req, 1, where, &error_bits);
@@ -942,6 +943,7 @@ flashcache_dm_io_sync_vm(struct cache_c *dmc, struct dm_io_region *where, int rw
 		.mem.offset = 0,
 		.notify.fn = NULL,
 		.client = flashcache_io_client,
+		.submit_bio = 1,
 	};
 
 	error = dm_io(&io_req, 1, where, &error_bits);

@@ -674,6 +674,12 @@ int flashcache_map(struct dm_target *ti, struct bio *bio,
 #else
 int flashcache_map(struct dm_target *ti, struct bio *bio);
 #endif
+
+int flashcache_map_rq(struct dm_target *ti, struct request *clone,
+		union map_info *map_context);
+int flashcache_mk_rq(struct dm_target *ti, struct request_queue *q,
+		struct bio *bio);
+
 int flashcache_ctr(struct dm_target *ti, unsigned int argc,
 		   char **argv);
 void flashcache_dtr(struct dm_target *ti);
@@ -748,7 +754,7 @@ int dm_io_async_bvec(unsigned int num_regions,
 		     int rw, 
 		     struct bio *bio,
 		     io_notify_fn fn, 
-		     void *context);
+		     void *context, int submit);
 #endif
 
 void flashcache_detect_fallow(struct cache_c *dmc, int index);

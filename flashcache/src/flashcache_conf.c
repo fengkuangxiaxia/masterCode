@@ -90,6 +90,8 @@ static int flashcache_notify_reboot(struct notifier_block *this,
 				    unsigned long code, void *x);
 static void flashcache_sync_for_remove(struct cache_c *dmc);
 
+static int request_based = 0;
+
 extern char *flashcache_sw_version;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
@@ -413,6 +415,7 @@ flashcache_writeback_create(struct cache_c *dmc, int force)
 	where.sector = 0;
 	where.count = dmc->md_block_size;
 	error = flashcache_dm_io_sync_vm(dmc, &where, READ, header);
+
 	if (error) {
 		vfree((void *)header);
 		DMERR("flashcache_writeback_create: Could not read cache superblock %lu error %d !",
@@ -1108,6 +1111,8 @@ flashcache_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 	} else
 		flashcache_writethrough_create(dmc);
 
+	printk("argvs finish\n");
+
 init:
 	dmc->num_sets = dmc->size >> dmc->assoc_shift;
 	order = dmc->num_sets * sizeof(struct cache_set);
@@ -1268,6 +1273,8 @@ init:
 	dmc->blacklist_tail = NULL;
 	dmc->num_whitelist_pids = 0;
 	dmc->num_blacklist_pids = 0;
+
+	printk("ctr finish\n");
 
 	flashcache_ctr_procfs(dmc);
 
@@ -1722,6 +1729,25 @@ static struct target_type flashcache_target = {
 	.iterate_devices = flashcache_iterate_devices,
 };
 
+static struct target_type flashcache_request_based_target = {
+	.name   = "flashcache",
+	.version= {1, 0, 4},
+	.module = THIS_MODULE,
+	.ctr    = flashcache_ctr,
+	.dtr    = flashcache_dtr,
+	.mk_rq	= flashcache_mk_rq,
+	.map_rq = flashcache_map_rq,
+	.status = flashcache_status,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+	.ioctl 	= flashcache_ioctl,
+#else
+	.prepare_ioctl 	= flashcache_prepare_ioctl,
+	.message        = flashcache_message,
+#endif
+	.iterate_devices = flashcache_iterate_devices,
+};
+
+
 static void
 flashcache_sync_for_remove(struct cache_c *dmc)
 {
@@ -1885,7 +1911,11 @@ flashcache_init(void)
 #endif
 	for (r = 0 ; r < 33 ; r++)
 		size_hist[r] = 0;
-	r = dm_register_target(&flashcache_target);
+	if (request_based == 1)
+		r = dm_register_target(&flashcache_request_based_target);
+	else
+		r = dm_register_target(&flashcache_target);
+
 	if (r < 0) {
 		DMERR("cache: register failed %d", r);
 	}
@@ -1906,13 +1936,20 @@ flashcache_init(void)
 void __exit
 flashcache_exit(void)
 {
+	struct target_type *target;
+
+	if (request_based == 1)
+		target = &flashcache_request_based_target;
+	else
+		target = &flashcache_target;
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-	int r = dm_unregister_target(&flashcache_target);
+	int r = dm_unregister_target(target);
 
 	if (r < 0)
 		DMERR("cache: unregister failed %d", r);
 #else
-	dm_unregister_target(&flashcache_target);
+	dm_unregister_target(target);
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26)
 	kcopyd_client_destroy(flashcache_kcp_client);
@@ -1936,6 +1973,9 @@ module_exit(flashcache_exit);
 EXPORT_SYMBOL(flashcache_writeback_load);
 EXPORT_SYMBOL(flashcache_writeback_create);
 EXPORT_SYMBOL(flashcache_writeback_md_store);
+
+MODULE_PARM_DESC(request_based, "Whether the flashcache is request-based");
+module_param(request_based, int, 0644);
 
 MODULE_DESCRIPTION(DM_NAME " Facebook flash cache target");
 MODULE_AUTHOR("Mohan - based on code by Ming");
