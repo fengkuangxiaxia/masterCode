@@ -463,7 +463,7 @@ static int create_log_context(struct dm_dirty_log *log, struct dm_target *ti,
 			kfree(lc);
 			return r;
 		}
-
+		lc->io_req.submit_bio = 1;
 		lc->disk_header = vmalloc(buf_size);
 		if (!lc->disk_header) {
 			DMWARN("couldn't allocate disk log buffer");

@@ -262,6 +262,7 @@ static int mirror_flush(struct dm_target *ti)
 		.mem.type = DM_IO_KMEM,
 		.mem.ptr.addr = NULL,
 		.client = ms->io_client,
+		.submit_bio = 1,
 	};
 
 	for (i = 0, m = ms->mirror; i < ms->nr_mirrors; i++, m++) {
@@ -531,6 +532,7 @@ static void read_async_bio(struct mirror *m, struct bio *bio)
 		.notify.fn = read_callback,
 		.notify.context = bio,
 		.client = m->ms->io_client,
+		.submit_bio = 1,
 	};
 
 	map_region(&io, m, bio);
@@ -643,6 +645,7 @@ static void do_write(struct mirror_set *ms, struct bio *bio)
 		.notify.fn = write_callback,
 		.notify.context = bio,
 		.client = ms->io_client,
+		.submit_bio = 1,
 	};
 
 	if (bio->bi_rw & REQ_DISCARD) {

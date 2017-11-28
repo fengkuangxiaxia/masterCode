@@ -503,6 +503,7 @@ static int run_io_job(struct kcopyd_job *job)
 		.notify.fn = complete_io,
 		.notify.context = job,
 		.client = job->kc->io_client,
+		.submit_bio = 1,
 	};
 
 	io_job_start(job->kc->throttle);

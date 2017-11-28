@@ -507,6 +507,7 @@ static void use_dmio(struct dm_buffer *b, int rw, sector_t block,
 		.notify.fn = dmio_complete,
 		.notify.context = b,
 		.client = b->c->dm_io,
+		.submit_bio = 1,
 	};
 	struct dm_io_region region = {
 		.bdev = b->c->bdev,
@@ -1239,6 +1240,7 @@ int dm_bufio_issue_flush(struct dm_bufio_client *c)
 		.mem.type = DM_IO_KMEM,
 		.mem.ptr.addr = NULL,
 		.client = c->dm_io,
+		.submit_bio = 1,
 	};
 	struct dm_io_region io_reg = {
 		.bdev = c->bdev,

@@ -1553,10 +1553,21 @@ static void dm_request(struct request_queue *q, struct bio *bio)
 {
 	struct mapped_device *md = q->queuedata;
 
+	struct dm_table *map = dm_get_live_table(md);
+	struct dm_target *ti = dm_table_find_target(map, bio->bi_sector);
+
+	if (ti->type->mk_rq) {
+		ti->type->mk_rq(ti, q, bio);
+		goto out;
+	}
+
 	if (dm_request_based(md))
 		blk_queue_bio(q, bio);
 	else
 		_dm_request(q, bio);
+
+out:
+	dm_table_put(map);
 }
 
 void dm_dispatch_request(struct request *rq)

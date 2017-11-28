@@ -241,6 +241,7 @@ static int chunk_io(struct pstore *ps, void *area, chunk_t chunk, int rw,
 		.mem.ptr.vma = area,
 		.client = ps->io_client,
 		.notify.fn = NULL,
+		.submit_bio = 1,
 	};
 	struct mdata_req req;
 
