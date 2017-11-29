@@ -115,6 +115,11 @@ int dm_io_async_bvec_pl(unsigned int num_regions,
 			void *context, int submit)
 {
 	struct dm_io_request iorq;
+	struct bio *next;
+	struct request_queue *q;
+	struct kcached_job *job = (struct kcached_job *) context;
+	int ret;
+	struct bio *bio;
 
 	iorq.bi_rw = rw;
 	iorq.mem.type = DM_IO_PAGE_LIST;
@@ -123,8 +128,24 @@ int dm_io_async_bvec_pl(unsigned int num_regions,
 	iorq.notify.fn = fn;
 	iorq.notify.context = context;
 	iorq.client = flashcache_io_client;
-	iorq.submit_bio = 1;
-	return dm_io(&iorq, num_regions, where, NULL);
+
+	if (job->bio && job->bio->bi_bdev && !submit)
+		iorq.submit_bio = 0;
+	else
+		iorq.submit_bio = 1;
+	iorq.start = iorq.end = NULL;
+	ret = dm_io(&iorq, num_regions, where, NULL);
+	if (job->bio && job->bio->bi_bdev) {
+		q = bdev_get_queue(job->bio->bi_bdev);
+		bio = iorq.start;
+		while (bio) {
+			next = bio->bi_next;
+			bio->bi_next = NULL;
+			blk_queue_bio(q, bio);
+			bio = next;
+		}
+	}
+	return ret;
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
@@ -849,6 +870,7 @@ flashcache_md_write_kickoff(struct kcached_job *job)
 	where.sector = (1 + INDEX_TO_MD_BLOCK(dmc, orig_job->index)) * MD_SECTORS_PER_BLOCK(dmc);
 	dmc->flashcache_stats.ssd_writes++;
 	dmc->flashcache_stats.md_ssd_writes++;
+	
 	dm_io_async_bvec_pl(1, &where, WRITE,
 			    &orig_job->pl_base[0],
 			    flashcache_md_write_callback, orig_job, 1);
