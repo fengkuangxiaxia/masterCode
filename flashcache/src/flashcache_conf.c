@@ -1111,8 +1111,6 @@ flashcache_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 	} else
 		flashcache_writethrough_create(dmc);
 
-	printk("argvs finish\n");
-
 init:
 	dmc->num_sets = dmc->size >> dmc->assoc_shift;
 	order = dmc->num_sets * sizeof(struct cache_set);
@@ -1273,8 +1271,6 @@ init:
 	dmc->blacklist_tail = NULL;
 	dmc->num_whitelist_pids = 0;
 	dmc->num_blacklist_pids = 0;
-
-	printk("ctr finish\n");
 
 	flashcache_ctr_procfs(dmc);
 

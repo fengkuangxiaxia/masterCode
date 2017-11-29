@@ -112,7 +112,7 @@ int dm_io_async_bvec_pl(unsigned int num_regions,
 			int rw, 
 			struct page_list *pl, 
 			io_notify_fn fn, 
-			void *context)
+			void *context, int submit)
 {
 	struct dm_io_request iorq;
 
@@ -123,6 +123,7 @@ int dm_io_async_bvec_pl(unsigned int num_regions,
 	iorq.notify.fn = fn;
 	iorq.notify.context = context;
 	iorq.client = flashcache_io_client;
+	iorq.submit_bio = 1;
 	return dm_io(&iorq, num_regions, where, NULL);
 }
 
@@ -850,7 +851,7 @@ flashcache_md_write_kickoff(struct kcached_job *job)
 	dmc->flashcache_stats.md_ssd_writes++;
 	dm_io_async_bvec_pl(1, &where, WRITE,
 			    &orig_job->pl_base[0],
-			    flashcache_md_write_callback, orig_job);
+			    flashcache_md_write_callback, orig_job, 1);
 }
 
 void
