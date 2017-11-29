@@ -265,6 +265,15 @@ struct sequential_io {
 							 * evict sequential i/o when we see some random,
 							 * but small enough that searching through it isn't slow
 							 * (currently we do linear search, we could consider hashed */
+
+struct flashcache_group {
+	unsigned int		weight;
+	u_int16_t 		*lru_head;
+	u_int16_t 		*lru_tail;
+	struct hlist_node 	fcg_node;
+	struct blkcg_gq 	blkg;
+	struct flashcache_group *root;
+};
 								
 	
 /*
@@ -400,6 +409,15 @@ struct cache_c {
 	struct sequential_io	seq_recent_ios[SEQUENTIAL_TRACKER_QUEUE_DEPTH];
 	struct sequential_io	*seq_io_head;
 	struct sequential_io 	*seq_io_tail;
+
+	int request_based;
+
+	/* List of flashcache groups being managed */
+	struct hlist_head fcg_list;
+
+	struct request_queue *queue;
+	struct flashcache_group root_fcg;
+	unsigned int total_weight;
 
 #define FLASHCACHE_WRITE_CLUST_HIST_SIZE	128
 	unsigned long	write_clust_hist[FLASHCACHE_WRITE_CLUST_HIST_SIZE];
@@ -798,6 +816,17 @@ void flashcache_clean_md_write_kickoff(struct flashcache_copy_job *job);
 
 int flashcache_kcopy_init(struct cache_c *dmc);
 void flashcache_kcopy_destroy(struct cache_c *dmc);
+
+/* flashcache cgroup */
+struct flashcache_group *fcg_of_blkg(struct blkcg_gp *blkg);
+struct flashcache_group *flashcache_alloc_fcg(struct cache_c *dmc);
+
+int flashcache_init_group(struct cache_c *dmc, struct flashcache_group *fcg);
+
+void flashcache_release_fcgs(struct cache_c *dmc);
+void flashcache_destroy_fcg(struct cache_c *dmc, struct flashcache_group *fcg);
+void flashcache_init_add_fcg_lists(struct cache_c *dmc,
+		struct flashcache_group *fcg, struct blkcg *blkcg);
 
 
 #endif /* __KERNEL__ */
