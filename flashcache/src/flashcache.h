@@ -818,7 +818,7 @@ int flashcache_kcopy_init(struct cache_c *dmc);
 void flashcache_kcopy_destroy(struct cache_c *dmc);
 
 /* flashcache cgroup */
-struct flashcache_group *fcg_of_blkg(struct blkcg_gp *blkg);
+struct flashcache_group *fcg_of_blkg(struct blkcg_gq *blkg);
 struct flashcache_group *flashcache_alloc_fcg(struct cache_c *dmc);
 
 int flashcache_init_group(struct cache_c *dmc, struct flashcache_group *fcg);

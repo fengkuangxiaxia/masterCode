@@ -1884,15 +1884,15 @@ void flashcache_update_blkgroup_wt(struct request_queue *q,
 
 	dmc = container_of(fcg->root, struct cache_c, root_fcg);
 	/* recalculate total weight */
-	hlist_for_each_entry_safe(tmp_fcg, pos, n, &dmc->fcg_list, fcg_node)
+	hlist_for_each_entry_safe(tmp_fcg, n, &dmc->fcg_list, fcg_node)
 		total_weight += tmp_fcg->weight;
 	dmc->total_weight = total_weight;
 }
 
 static struct blkcg_policy blkio_policy_flashcache = {
-	.blkio_unlink_group_fn =	flashcache_unlink_blkgroup,
-	.blkio_update_group_weight_fn = flashcache_update_blkgroup_wt,
-	.plid = BLKIO_POLICY_CACHE,
+	//.blkio_unlink_group_fn =	flashcache_unlink_blkgroup,
+	//.blkio_update_group_weight_fn = flashcache_update_blkgroup_wt,
+	.plid = 4,
 };
 //TODO end
 
@@ -1979,7 +1979,7 @@ flashcache_init(void)
 		kmalloc(sizeof(struct flashcache_control_s), GFP_KERNEL);
 	flashcache_control->synch_flags = 0;
 	register_reboot_notifier(&flashcache_notifier);
-	blkio_policy_register(&blkio_policy_flashcache);
+	blkcg_policy_register(&blkio_policy_flashcache);
 	return r;
 }
 
@@ -1991,7 +1991,7 @@ flashcache_exit(void)
 {
 	struct target_type *target;
 
-	blkio_policy_unregister(&blkio_policy_flashcache);
+	blkcg_policy_unregister(&blkio_policy_flashcache);
 
 	if (request_based == 1)
 		target = &flashcache_request_based_target;

@@ -810,8 +810,8 @@ void flashcache_init_add_fcg_lists(struct cache_c *dmc,
 	blkiocg_add_blkio_group(blkcg, &fcg->blkg, dmc->queue,
 			fcg->blkg.dev, BLKIO_POLICY_CACHE);
 
-	fcg->weight = blkcg->weight;
-	dmc->total_weight += blkcg->weight;
+	fcg->weight = blkcg->cfq_weight;
+	dmc->total_weight += blkcg->cfq_weight;
 	hlist_add_head(&fcg->fcg_node, &dmc->fcg_list);
 }
 
