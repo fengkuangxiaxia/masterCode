@@ -1201,12 +1201,7 @@ init:
 		dmc->request_based = 0;
 	else
 		dmc->request_based = 1;
-
-	INIT_HLIST_HEAD(&dmc->fcg_list);
-	dmc->root_fcg.lru_head = NULL;
-	dmc->root_fcg.lru_tail = NULL;
 	dmc->queue = NULL;
-	dmc->total_weight = 0;
 
 	/* Other sysctl defaults */
 	dmc->sysctl_io_latency_hist = 0;
@@ -1441,7 +1436,6 @@ flashcache_dtr(struct dm_target *ti)
 	int nr_queued = 0;
 
 	flashcache_dtr_procfs(dmc);
-	flashcache_release_fcgs(dmc);
 
 	if (dmc->cache_mode == FLASHCACHE_WRITE_BACK) {
 		flashcache_sync_for_remove(dmc);
@@ -1857,44 +1851,6 @@ struct kcopyd_client *flashcache_kcp_client; /* Kcopyd client for writing back d
 struct dm_io_client *flashcache_io_client; /* Client memory pool*/
 #endif
 
-//TODO
-void flashcache_unlink_blkgroup(struct request_queue *q,
-		struct blkcg_gq *blkg)
-{
-	struct flashcache_group *fcg = fcg_of_blkg(blkg);
-	struct cache_c *dmc =
-		container_of(fcg->root, struct cache_c, root_fcg);
-
-	flashcache_destroy_fcg(dmc, fcg);
-}
-
-void flashcache_update_blkgroup_wt(struct request_queue *q,
-					struct blkcg_gq *blkg,
-					unsigned int weight)
-{
-	struct flashcache_group *fcg = fcg_of_blkg(blkg);
-	struct cache_c *dmc;
-	struct hlist_node *pos, *n;
-	struct flashcache_group *tmp_fcg;
-	int total_weight = 0;
-
-	fcg->weight = weight;
-	if (!fcg->root)
-		return;
-
-	dmc = container_of(fcg->root, struct cache_c, root_fcg);
-	/* recalculate total weight */
-	hlist_for_each_entry_safe(tmp_fcg, n, &dmc->fcg_list, fcg_node)
-		total_weight += tmp_fcg->weight;
-	dmc->total_weight = total_weight;
-}
-
-static struct blkcg_policy blkio_policy_flashcache = {
-	//.blkio_unlink_group_fn =	flashcache_unlink_blkgroup,
-	//.blkio_update_group_weight_fn = flashcache_update_blkgroup_wt,
-	.plid = 4,
-};
-//TODO end
 
 /*
  * Initiate a cache target.
@@ -1979,7 +1935,6 @@ flashcache_init(void)
 		kmalloc(sizeof(struct flashcache_control_s), GFP_KERNEL);
 	flashcache_control->synch_flags = 0;
 	register_reboot_notifier(&flashcache_notifier);
-	blkcg_policy_register(&blkio_policy_flashcache);
 	return r;
 }
 
@@ -1990,8 +1945,6 @@ void __exit
 flashcache_exit(void)
 {
 	struct target_type *target;
-
-	blkcg_policy_unregister(&blkio_policy_flashcache);
 
 	if (request_based == 1)
 		target = &flashcache_request_based_target;
