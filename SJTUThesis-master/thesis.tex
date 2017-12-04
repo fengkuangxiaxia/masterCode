@@ -4,7 +4,7 @@
 %%==================================================
 
 % 双面打印
-\documentclass[master, fontset=adobe, openright, twoside, zihao=-4]{sjtuthesis}
+\documentclass[master, fontset=adobe, openright, twoside, openany, zihao=-4]{sjtuthesis}
 % \documentclass[bachelor, fontset=adobe, openany, oneside, submit]{sjtuthesis}
 % \documentclass[master, fontset=adobe, review]{sjtuthesis}
 % \documentclass[%
@@ -68,6 +68,11 @@
 %% 正文内容
 \pagestyle{main}
 \include{tex/intro}
+\include{tex/hss_intro}
+\include{tex/key_tech}
+\include{tex/opensource_intro}
+\include{tex/sys_design}
+\include{tex/sys_implement}
 \include{tex/summary}
 
 \appendix	% 使用英文字母对附录编号，重新定义附录中的公式、图图表编号样式
