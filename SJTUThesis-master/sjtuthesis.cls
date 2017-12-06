@@ -174,7 +174,7 @@
 \renewcommand{\labelitemi}{\ensuremath{\bullet}}
 
 %% Graphic path & file extension
-\graphicspath{{fig/}{figure/}{figures/}{logo/}{logos/}{graph/}{graphs}}
+\graphicspath{{fig/}{figure/}{figures/}{logo/}{logos/}{graph/}{graphs}{pdf/}}
 \DeclareGraphicsExtensions{.pdf,.eps,.png,.jpg,.jpeg}
 
 % Caption setting in ccaption pacakge
