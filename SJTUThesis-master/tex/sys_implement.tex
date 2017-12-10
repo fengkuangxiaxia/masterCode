@@ -75,4 +75,63 @@ mapped device基于request还是基于bio的主要区别在于，如果是基于
 在系统的实现过程中，除了上面介绍的几个关键知识点外，还涉及很多其他的Linux内核知识，比如Linux的内核模块编程、内核编程中的常用宏、常用数据结构、内核的调试等内容，这里不再详细介绍。
 
 \section{编程实现}
+
+有了上面预备知识的铺垫，就可以比较清楚地介绍系统的编程实现了。下面将着重介绍系统的对多缓存设备对多后台设备的实现以及按照进程的权限分配不同进程的I/O带宽的实现。本系统基于的内核版本为linux 3.10.108。
+
+\subsection{多缓存设备对多后台设备的实现}
+
+在设计部分提过本系统采用分层管理结构，将多设备的管理与混合存储系统隔离开。本系统对多缓存设备对多后台设备的实现基于LVM。系统的建立流程如图\ref{fig:create}所示，首先接收用户的各种参数信息，然后依据参数先将多个SSD映射为一个虚拟缓存设备，再将多个HDD映射为一个虚拟后台设备，最后将这两个设备的信息连同混合存储系统的配置参数发给dmsetup命令，dmsetup将参数传给系统在内核的初始化函数进行混合存储系统的构建。系统的销毁流程比较简单，首先调用系统在内核的注销函数销毁混合存储系统，然后将虚拟缓存设备卸载解除与多个SSD的映射关系，再将虚拟后台设备卸载解除与多个HDD的映射关系。
+
+\begin{figure}[!htp]
+    \centering
+    \includegraphics[width=0.6\textwidth]{create.pdf}
+    \bicaption[fig:create]{多缓存设备对多后台设备的创建}{多缓存设备对多后台设备的创建}{Fig}{creation of multi-ssds to multi-hdds}
+\end{figure}
+
+\subsection{按照进程的权限分配不同进程的I/O带宽的实现}
+
+本系统通过使用Linux自带的I/O调度器的CFQ策略，通过为不同进程设置不同的cgroup的weight实现对这些进程按照权重不同分配不同的I/O带宽。由于I/O调度器只对request队列起作用，对bio不起作用，因此需要实现基于request的混合存储系统。
+
+\subsubsection{Linux内核的修改}
+
+通过研究Linux内核中Device Mapper的相关代码，本研究发现现有的Device Mapper的实现中，仅有multipath\_map函数是基于request的，在multipath\_map可以改变request队列然后返回DM\_MAPIO\_REMAPPED达成对队列的修改，而负责将对mapped device的请求映射到低层的设备的函数map\_rq必须将请求发送给低层设备而不能仅改变队列就返回。因此需要实现一个新的接口。Device Mapper提供了target\_type这一结构体用来管理对mapped device的各种操作，在target\_type中添加mk\_rq接口实现对request的生成。
+
+对Linux的内核作出的具体修改如下：
+
+\begin{enumerate}
+    \item include/linux/dm-io.h文件对dm\_io\_request结构体添加三个变量，submit\_bio用以表示是否直接提交bio，start和end为两个bio指针，指向该dm\_io\_request的起始bio和终止bio。
+    \item drivers/md/dm-io.c文件，do\_region改为接收dm\_io\_request类型参数，依据dm\_io\_request类型的参数中submit\_bio的设置判断是直接提交bio还是放入request中。dispatch\_io改为接收dm\_io\_request类型参数，相关操作包括对do\_region的调用相应改为基于dm\_io\_request类型的操作。sync\_io改为接收dm\_io\_request类型参数，相关操作包括对dispatch\_io的调用相应改为基于dm\_io\_request类型的操作。async\_io改为接收dm\_io\_request类型参数，相关操作包括对dispatch\_io的调用相应改为基于dm\_io\_request类型的操作。dm\_io中对sync\_io和async\_io的调用都改为传递dm\_io\_request类型参数。
+    \item include/linux/device-mapper.h文件中对target\_type结构体添加函数指针mk\_rq作为新的新接口，用以支持自己对request的生成。
+    \item drivers/md/dm.c文件，dm\_request原本只是简单地判断mapped device是基于request还是基于bio，并据此分别调用blk\_queue\_bio或\_dm\_request。现在首先从映射表中获得mapped device，查看是否实现了具体的mk\_rq方法，如果实现了则调用该方法然后返回，否则依旧根据是基于request还是基于bio分别调用blk\_queue\_bio或\_dm\_request，流程如图\ref{fig:dm_request}所示。
+    \item drivers/md/dm-bufio.c文件，use\_dmio和dm\_bufio\_issue\_flush中初始化io\_req时设置submit\_bio为1，默认直接提交bio。
+    \item drivers/md/dm-kcopyd.c文件，run\_io\_job中初始化io\_req时设置submit\_bio为1，默认直接提交bio。
+    \item drivers/md/dm-log.c文件，create\_log\_context中设置lc的io\_req的submit\_bio为1，默认直接提交bio。
+    \item drivers/md/dm-raid1.c文件，mirror\_flush、read\_async\_bio和do\_write中初始化io\_req时设置submit\_bio为1，默认直接提交bio。
+    \item drivers/md/dm-snap-persistent.c文件，chunk\_io中初始化io\_req时设置submit\_bio为1，默认直接提交bio。
+\end{enumerate}
+
+\begin{figure}[!htp]
+    \centering
+    \includegraphics[width=\textwidth]{dm_request.pdf}
+    \bicaption[fig:dm_request]{dm\_request处理流程}{dm\_request处理流程}{Fig}{dm\_request process}
+\end{figure}
+
+
+\subsubsection{系统的实现}
+
+在对Linux内核修改完毕后，现在的Device Mapper中target\_type支持开发者实现自己的mk\_rq接口。本系统通过实现mk\_rq和map\_rq接口实现基于request的混合存储系统，具体流程如图\ref{fig:request_process}所示。
+
+mk\_rq()负责用bio生成对应的request，mk\_rq()接收对系统的bio请求，然后根据bio判断对系统的具体操作，然后去调用对应操作的函数并传入参数设置不立即提交bio，各操作函数经过递归调用最后都会落到dm\_io\_async\_bvec()中，m\_io\_async\_bvec()根据传入的参数生成dm\_io\_request并根据最初的参数判断不是立即提交bio，于是将bio存入mapped device的request队列中。
+
+map\_rq()负责将对混合存储系统的请求分派到具体的实际设备执行操作。
+
+\begin{figure}[!htp]
+    \centering
+    \includegraphics[width=\textwidth]{request_process.pdf}
+    \bicaption[fig:request_process]{基于request的请求流程}{基于request的请求流程}{Fig}{request process in request-based system}
+\end{figure}
+
+
 \section{本章小结}
+
+本章介绍了系统在实现中需要的预备知识以及具体的实现方法。预备知识主要介绍了Linux存储层次、bio和Device Mapper。具体的实现方法主要介绍了多缓存设备对多后台设备的实现以及按照进程的权限分配不同进程的I/O带宽的实现。
