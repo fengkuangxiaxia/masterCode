@@ -162,7 +162,7 @@ int dm_io_async_bvec(unsigned int num_regions,
 {
 	struct dm_io_request iorq;
 
-	struct bio *next;
+	struct bio *next, *temp;
 	struct request_queue *q;
 	struct kcached_job *job = (struct kcached_job *) context;
 	int ret;
@@ -188,12 +188,12 @@ int dm_io_async_bvec(unsigned int num_regions,
 	ret = dm_io(&iorq, num_regions, where, NULL);
 	if (job->bio && job->bio->bi_bdev) {
 		q = bdev_get_queue(job->bio->bi_bdev);
-		bio = iorq.start;
-		while (bio) {
-			next = bio->bi_next;
-			bio->bi_next = NULL;
-			blk_queue_bio(q, bio);
-			bio = next;
+		temp = iorq.start;
+		while (temp) {
+			next = temp->bi_next;
+			temp->bi_next = NULL;
+			blk_queue_bio(q, temp);
+			temp = next;
 		}
 	}
 	return ret;
@@ -2229,6 +2229,8 @@ flashcache_mk_rq(struct dm_target *ti, struct request_queue *q, struct bio *bio)
 	struct cache_c *dmc = (struct cache_c *) ti->private;
 	int sectors = to_sector(bio->bi_size);
 	int queued;
+	int uncacheable;
+	unsigned long flags;
 	
 	if (sectors <= 32)
 		size_hist[sectors]++;
@@ -2236,20 +2238,35 @@ flashcache_mk_rq(struct dm_target *ti, struct request_queue *q, struct bio *bio)
 	if (bio_barrier(bio))
 		return -EOPNOTSUPP;
 
-	VERIFY(to_sector(bio->bi_size) <= dmc->block_size);
+	/*
+	 * Basic check to make sure blocks coming in are as we
+	 * expect them to be.
+	 */
+	flashcache_do_block_checks(dmc, bio);
 
 	if (bio_data_dir(bio) == READ)
 		dmc->flashcache_stats.reads++;
 	else
 		dmc->flashcache_stats.writes++;
 
+	spin_lock_irqsave(&dmc->ioctl_lock, flags);
 	if (unlikely(dmc->sysctl_pid_do_expiry && 
 		     (dmc->whitelist_head || dmc->blacklist_head)))
 		flashcache_pid_expiry_all_locked(dmc);
-	if ((to_sector(bio->bi_size) != dmc->block_size) ||
-	    (bio_data_dir(bio) == WRITE && 
-	     (dmc->cache_mode == FLASHCACHE_WRITE_AROUND || flashcache_uncacheable(dmc, bio)))) {
+	uncacheable = (unlikely(dmc->bypass_cache) ||
+		       (to_sector(bio->bi_size) != dmc->block_size) ||
+		       /* 
+			* If the op is a READ, we serve it out of cache whenever possible, 
+			* regardless of cacheablity 
+			*/
+		       (bio_data_dir(bio) == WRITE && 
+			((dmc->cache_mode == FLASHCACHE_WRITE_AROUND) ||
+			 flashcache_uncacheable(dmc, bio))));
+	spin_unlock_irqrestore(&dmc->ioctl_lock, flags);
+	if (uncacheable) {
+		flashcache_setlocks_multiget(dmc, bio);
 		queued = flashcache_inval_blocks(dmc, bio);
+		flashcache_setlocks_multidrop(dmc, bio);
 		if (queued) {
 			if (unlikely(queued < 0))
 				flashcache_bio_endio(bio, -EIO, dmc, NULL);
@@ -2257,7 +2274,7 @@ flashcache_mk_rq(struct dm_target *ti, struct request_queue *q, struct bio *bio)
 			/* Start uncached IO */
 			flashcache_start_uncached_io(dmc, bio, 0);
 		}
-	} else {	
+	} else {
 		if (bio_data_dir(bio) == READ)
 			flashcache_read(dmc, bio, 0);
 		else
