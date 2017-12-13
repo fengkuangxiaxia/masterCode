@@ -5,15 +5,39 @@
 
 \begin{abstract}
 
-测试
+随着云计算与大数据的快速发展，对作为其基石的存储系统的要求越来越高，存储系统需要具备大容量、低成本、高性能。而目前主流的任何一种存储设备如固态盘、磁盘由于各种限制不能单独构建出同时满足上述要求的存储系统。混合存储系统充分利用不同存储设备特性的互补构建高效的存储系统，既能支持大容量，又能在保证系统低成本下仍能具有高性能，成为目前的研究热点。
 
-\keywords{\large 测试1 \quad 测试2 \quad 测试3}
+本文首先介绍了混合存储系统的基本概念和发展历史，然后研究了混合存储系统在设计中的关键技术，之后研究了三个开源混合存储系统，在此基础上设计并实现了一个基于SSD和HDD的混合存储系统qscache。本文的主要工作如下：
+
+\begin{enumerate}
+    \item 对当前主流的存储设备介绍，并对性能、成本、容量进行了分析对比。
+    \item 对混合存储系统的发展历史进行了研究并分析总结了混合存储系统在设计中的关键技术。
+    \item 对三个开源混合存储系统进行了研究，分析对比了它们的性能和特性。
+    \item 设计并实现了qscache系统。
+    \item 对qscache系统的性能以及多缓存设备对多后台设备功能和对I/O带宽按权限分配的功能进行了测试。
+\end{enumerate}
+
+测试结果显示qscache系统的整体性能与flashcache接近，并且成功实现对I/O带宽按权限分配的功能，系统通过Linux内核模块实现，但需要对Linux内核进行修改。本论文的研究成果对于其它的混合存储系统设计与实现以及需要对Linux中Device Mapper进行功能扩展与修改的研究具有较好的借鉴价值。
+
+\keywords{\large 混合存储 \quad 固态盘 \quad 磁盘 \quad 按权限配额}
 \end{abstract}
 
 \begin{englishabstract}
 
-test
+With the rapid development of cloud computing and big data, the storage system, which is the cornerstone, needs to provide high storage capacity and high performance at low cost. While at present any one of the storage devices, such as solid state disk and hard disk drive, can not meet the above requirements alone due to various limitations. Hybrid storage system takes full advantage of the characteristics of different storage device to support large-capacity, but also ensures high performance at low cost. Therefore, hybrid storage system is becoming the current research focus. 
 
-\englishkeywords{\large test1, test2, test3}
+This paper introduces the basic concepts and development history of hybrid storage system first, then studies the key technologies in the design of hybrid storage system, and then studies three open source hybrid storage systems, based on which, a hybrid storage system named qscache is designed and implentmented. The main work of this paper is as follows:
+
+\begin{enumerate}
+    \item The current wide-used storage devices are introduced, and their performance, cost, capacity were analyzed and compared.
+    \item The history of the development of hybrid storage systems was studied and the key technologies in the design of hybrid storage systems were summarized.
+    \item Three open source hybrid storage systems were studied, and their performance and characteristics were analyzed and compared.
+    \item The design and implementation of hybrid storage system qscache.
+    \item The performance of the qscache system, as well as the ability of support of multiple cache devices to multiple backend devices and the support of assigning I / O bandwidth based on weight, was tested.
+\end{enumerate}
+
+The test results shows that the performance of the qscache system is close to flashcache, and assigning I / O bandwidth based on weight is implemented. The qscache system is implemented as a kernel module in Linux, but the modification of Linux kernel is a must. This research provides a reference for the design and implementation of other hybrid storage systems and the modification of the Device Mapper in Linux kernel.
+
+\englishkeywords{\large hybrid storage, solid state disk, hard disk drive, weight-based quota}
 \end{englishabstract}
 
