@@ -16,7 +16,7 @@
 flashcache基于device mapper，采用分层架构，缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
 
 \subsection{数据映射策略}
-
+\label{flashcache_mapping}
 flashcache采用块级映射策略中的组关联映射规则，通过set associative hash\cite{kimmel2014set}将缓存设备分成多个固定大小的set(一个set默认为512个block)并组织起来，将请求的block的起始扇区(dbn)通过公式\ref{eq:dbn_to_set}映射到target set，再在target set内部进行线性探测获取block，如图\ref{fig:flashcache_map}所示。
 
 \begin{equation}

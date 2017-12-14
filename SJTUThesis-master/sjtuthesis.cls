@@ -82,6 +82,7 @@
 \RequirePackage{algorithm, algorithmicx, algpseudocode}
 \RequirePackage{siunitx}
 \RequirePackage{tikz}
+\RequirePackage{float}
 \usetikzlibrary{shapes.geometric, arrows}
 
 %==========
