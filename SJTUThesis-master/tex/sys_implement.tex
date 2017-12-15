@@ -184,14 +184,21 @@ iterate\_devices接口负责遍历系统所管理的缓存设备和后台设备�
     \bicaption[fig:request_process]{基于request的请求流程}{基于request的请求流程}{Fig}{request process in request-based system}
 \end{figure}
 
-具体地说，mk\_rq()接收对系统的bio请求，然后根据bio判断对系统的具体操作，然后去调用对应操作的函数并传入参数设置不立即提交bio，各操作函数经过递归调用最后都会落到dm\_io\_async\_bvec()中，如图\ref{fig:dm_io_async_bvec}所示，mk\_rq()不论是调用不经缓存的操作，还是缓存命中或未命中的读写操作最终都会调用dm\_io\_async\_bvec()，并在mk\_rq()中将是否立即提交bio的参数一路传给dm\_io\_async\_bvec()。dm\_io\_async\_bvec()根据传入的参数生成dm\_io\_request并调用dm\_io()，对于立即提交的bio，dm\_io\_async\_bvec()结束调用后就立刻返回，对于不是立即提交的bio，再dm\_io()中会设置整个bio的开始与结束，然后返回dm\_io\_async\_bvec()通过开始与结束遍历这些bio，然后用这些bio各自或生成一个request放入队列中。
+具体地说，mk\_rq()接收对系统的bio请求，然后根据bio判断对系统的具体操作，然后去调用对应操作的函数并传入参数设置不立即提交bio，各操作函数经过递归调用最后都会落到dm\_io\_async\_bvec()中，如图\ref{fig:dm_io_async_bvec}所示，mk\_rq()不论是调用不经缓存的操作，还是缓存命中或未命中的读写操作最终都会调用dm\_io\_async\_bvec()，并在mk\_rq()中将是否立即提交bio的参数一路传给dm\_io\_async\_bvec()。
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{dm_io_async_bvec.pdf}
-    \bicaption[fig:dm_io_async_bvec]{dm\_io\_async\_bvec()调用以及处理流程}{dm\_io\_async\_bvec()调用以及处理流程}{Fig}{call and process of dm\_io\_async\_bvec()}
+    \includegraphics[width=\textwidth]{call_dm_io_async_bvec.pdf}
+    \bicaption[fig:call_dm_io_async_bvec]{dm\_io\_async\_bvec()调用流程}{dm\_io\_async\_bvec()调用流程}{Fig}{call of dm\_io\_async\_bvec()}
 \end{figure}
 
+dm\_io\_async\_bvec()的处理流程如图\ref{fig:process_dm_io_async_bvec}所示，dm\_io\_async\_bvec()根据传入的参数生成dm\_io\_request并调用dm\_io()，对于立即提交的bio，dm\_io\_async\_bvec()结束调用后就立刻返回，对于不是立即提交的bio，再dm\_io()中会设置整个bio的开始与结束，然后返回dm\_io\_async\_bvec()通过开始与结束遍历这些bio，然后用这些bio各自或生成一个request放入队列中。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{process_dm_io_async_bvec.pdf}
+    \bicaption[fig:process_dm_io_async_bvec]{dm\_io\_async\_bvec()处理流程}{dm\_io\_async\_bvec()处理流程}{Fig}{process of dm\_io\_async\_bvec()}
+\end{figure}
 
 \subsection{系统信息组织与管理的实现}
 
