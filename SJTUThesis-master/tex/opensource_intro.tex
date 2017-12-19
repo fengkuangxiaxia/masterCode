@@ -7,7 +7,7 @@
 \chapter{开源混合存储系统介绍}
 \label{chap:opensource_intro}
 
-本章首先对flashcache、dm-cache、bcache这三个开源混合存储系统分别从系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合进行介绍，然后对他们进行对比分析。
+目前，开源的混合存储系统中被使用较为广泛的是flashcache、dm-cache、bcache这三个系统，但是对于这三个系统的研究主要集中在对他们的算法研究\cite{杨宗2013flashcache, 唐华敏2015bcache}，而对他们的对比较少。本章将首先对flashcache、dm-cache、bcache这三个开源混合存储系统分别从系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合进行介绍，然后对他们从性能和特性两方面进行对比分析。
 
 \section{flashcache}
 
