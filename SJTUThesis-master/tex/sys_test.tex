@@ -25,7 +25,7 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
 
 测试环境如表\ref{tab:qscache_test_environment}所示
 
-\begin{table}[!hpb]
+\begin{table}[H]
     \centering
     \bicaption[tab:qscache_test_environment]{qscache性能测试环境}{qscache性能测试环境}{Table}{test environment of qscache}
     \begin{tabular}{cc} \toprule
@@ -89,13 +89,9 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
 
 \subsection{顺序读写性能对比}
 
-顺序读写性能使用fio进行对比测试，文件大小为4GB，块大小从4KB到16MB，四个待测试系统均格式化为ext4文件系统。顺序读写性能测试结果如表\ref{tab:seq_comparison}所示。
+顺序读写性能使用fio进行对比测试，文件大小为4GB，块大小从4KB到16MB，命令为fio -filename=/dev/mapper/cachedev -direct=1 -iodepth1 -thread -rw=RW -ioengine=libaio -bs=BS -size=4G -numjobs=8 -runtime=30 -name=readtest，通过设置BS来设置块大小，通过设置RW为read或write来设置顺序读或顺序写。顺序读写性能测试结果如表\ref{tab:seq_comparison}所示。
 
-四者的顺序读性能对比如图\ref{fig:seq_read_comparison}所示，可以看到基于HDD的系统的吞吐量能达到220MB/s，而flashcache大约为170MB/s，基于bio的qscache和flashcache差不多也在170MB/s左右，而基于request的qscache大约为160MB/s。这是因为，对于基于HDD的系统而言，读请求直接从HDD上读取数据，不需要经历额外步骤；对于flashcache，当设置也缓存顺序操作时，需要先访问SSD查询缓存是否命中，如果未命中还需要去HDD中读取数据并可能会替换缓存，因此额外开销较多；对于基于bio的qscache，由于总体设计和策略与flashcache差不多，因此性能相近；对于基于request的qscache，由于将原本立刻提交的bio请求延缓放入request中，因此性能有所下降。
-
-四者的顺序写性能对比如图\ref{fig:seq_write_comparison}所示，可以看到基于HDD的系统的吞吐量能达到200MB/s，而flashcache大约为130MB/s，基于bio的qscache差不多在110MB/s左右，而基于request的qscache和基于bio差不多，大约为110MB/s。这是因为，对于基于HDD的系统而言，写请求直接向HDD上写数据，不需要经历额外步骤；对于flashcache，当设置也缓存顺序操作时，需要先访问SSD查询缓存是否命中，如果未命中还需要去HDD中读取数据并可能会替换缓存，然后对缓存中的数据进行更改，并会发生写回，因此额外开销较多；对于基于bio的qscache，由于总体设计和策略与flashcache差不多，因此性能相差不多；对于基于request的qscache，由于将原本立刻提交的bio请求延缓放入request中，因此性能有所下降。
-
-\begin{table}[!hpb]
+\begin{table}[!ht]
     \centering
     \bicaption[tab:seq_comparison]{HDD、flashcache、qscache顺序读写性能}{HDD、flashcache、qscache顺序读写性能（KB/s）}{Table}{comparison of sequential performance among HDD, flashcache and qscache(KB/s)}
     \begin{tabular}{@{}ccccccccc@{}} 
@@ -120,25 +116,27 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
     \end{tabular}
 \end{table}
 
-\begin{figure}[!htp]
+四者的顺序读性能对比如图\ref{fig:seq_read_comparison}所示，可以看到基于HDD的系统的吞吐量能达到220MB/s，而flashcache大约为170MB/s，基于bio的qscache和flashcache差不多也在170MB/s左右，而基于request的qscache大约为160MB/s。这是因为，对于基于HDD的系统而言，读请求直接从HDD上读取数据，不需要经历额外步骤；对于flashcache，当设置也缓存顺序操作时，需要先访问SSD查询缓存是否命中，如果未命中还需要去HDD中读取数据并可能会替换缓存，因此额外开销较多；对于基于bio的qscache，由于总体设计和策略与flashcache差不多，因此性能相近；对于基于request的qscache，由于将原本立刻提交的bio请求延缓放入request中，因此性能有所下降。
+
+\begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{seq_read.pdf}
+    \includegraphics[width=0.8\textwidth]{seq_read.pdf}
     \bicaption[fig:seq_read_comparison]{HDD、flashcache、qscache顺序读性能对比图}{HDD、flashcache、qscache顺序读性能对比图}{Fig}{comparison of sequential read among HDD, flashcache and qscache}
 \end{figure}
 
-\begin{figure}[!htp]
+四者的顺序写性能对比如图\ref{fig:seq_write_comparison}所示，可以看到基于HDD的系统的吞吐量能达到200MB/s，而flashcache大约为130MB/s，基于bio的qscache差不多在110MB/s左右，而基于request的qscache和基于bio差不多，大约为110MB/s。这是因为，对于基于HDD的系统而言，写请求直接向HDD上写数据，不需要经历额外步骤；对于flashcache，当设置也缓存顺序操作时，需要先访问SSD查询缓存是否命中，如果未命中还需要去HDD中读取数据并可能会替换缓存，然后对缓存中的数据进行更改，并会发生写回，因此额外开销较多；对于基于bio的qscache，由于总体设计和策略与flashcache差不多，因此性能相差不多；对于基于request的qscache，由于将原本立刻提交的bio请求延缓放入request中，因此性能有所下降。
+
+\begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{seq_write.pdf}
+    \includegraphics[width=0.8\textwidth]{seq_write.pdf}
     \bicaption[fig:seq_write_comparison]{HDD、flashcache、qscache顺序写性能对比图}{HDD、flashcache、qscache顺序写性能对比图}{Fig}{comparison of sequential write among HDD, flashcache and qscache}
 \end{figure}
 
 \subsection{随机读写性能对比}
 
-随机读写性能使用fio进行对比测试，文件大小为4GB，块大小从4KB到16MB，四个待测试系统均格式化为ext4文件系统。随机读写性能测试结果如表\ref{tab:rand_comparison_1}及表\ref{tab:rand_comparison_2}所示。
+随机读写性能使用fio进行对比测试，文件大小为4GB，块大小从4KB到16MB，命令为fio -filename=/dev/mapper/cachedev -direct=1 -iodepth1 -thread -rw=RW -ioengine=libaio -bs=BS -size=4G -numjobs=8 -runtime=30 -name=readtest，通过设置BS来设置块大小，通过设置RW为randread、randwrite或randrw来设置随机读、随机写或混合随机读写。随机读写性能测试结果如表\ref{tab:rand_comparison_1}及表\ref{tab:rand_comparison_2}所示。
 
-四者的随机读性能对比如图\ref{fig:rand_read_comparison}所示，随机写性能对比如图\ref{fig:rand_write_comparison}所示，可以看到机遇HDD的系统在随机读写方面性能极差，IOPS大约只有200-300，而flashcache和基于bio的qscache以及基于request的qscache的IOPS大约在5000到15000，总的来说flashcache和基于bio的qscache和基于request的qscache在随机读方面性能比较相近，而在随机写方面flashcache和基于bio的qscache性能相近而基于request的qscache性能则较差。
-
-\begin{table}[!hpb]
+\begin{table}[H]
     \centering
     \bicaption[tab:rand_comparison_1]{HDD、flashcache、qscache随机读写性能}{HDD、flashcache、qscache随机读写性能（IOPS）}{Table}{comparison of random performance among HDD, flashcache and qscache(IOPS)}
     \begin{tabular}{@{}ccccccccc@{}} 
@@ -154,7 +152,7 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
     \end{tabular}
 \end{table}
 
-\begin{table}[!hpb]
+\begin{table}[H]
     \centering
     \bicaption[tab:rand_comparison_2]{HDD、flashcache、qscache随机读写性能（续）}{HDD、flashcache、qscache随机读写性能（IOPS）（续）}{Table}{comparison of random performance among HDD, flashcache and qscache(IOPS)(continued)}
     \begin{tabular}{@{}ccccccccc@{}} 
@@ -170,17 +168,24 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
     \end{tabular}
 \end{table}
 
-\begin{figure}[!htp]
+
+四者的随机读性能对比如图\ref{fig:rand_read_comparison}所示，随机写性能对比如图\ref{fig:rand_write_comparison}所示，可以看到机遇HDD的系统在随机读写方面性能极差，IOPS大约只有200-300，而flashcache和基于bio的qscache以及基于request的qscache的IOPS大约在5000到15000，总的来说flashcache和基于bio的qscache和基于request的qscache在随机读方面性能比较相近，而在随机写方面flashcache和基于bio的qscache性能相近而基于request的qscache性能则较差。
+
+\begin{figure}[!htbp]
     \centering
-    \includegraphics[width=\textwidth]{rand_read.pdf}
+    \includegraphics[width=0.8\textwidth]{rand_read.pdf}
     \bicaption[fig:rand_read_comparison]{HDD、flashcache、qscache随机读性能对比图}{HDD、flashcache、qscache随机读性能对比图}{Fig}{comparison of random read among HDD, flashcache and qscache}
 \end{figure}
 
-\begin{figure}[!htp]
+\begin{figure}[!htbp]
     \centering
-    \includegraphics[width=\textwidth]{rand_write.pdf}
+    \includegraphics[width=0.8\textwidth]{rand_write.pdf}
     \bicaption[fig:rand_write_comparison]{HDD、flashcache、qscache随机写性能对比图}{HDD、flashcache、qscache随机写性能对比图}{Fig}{comparison of random write among HDD, flashcache and qscache}
 \end{figure}
+
+\subsection{测试分析}
+
+从测试结果来看，在顺序读写性能方面，qscache系统仍无法达到HDD的水平，由于qscache系统整体设计基于flashcache，因此性能大致与flashcache接近，另外可以发现不论是基于bio还是基于request，qscache系统的顺序读写性能也基本接近，这是由于对于顺序读写，系统会进行判断，将大部分顺序请求过滤不进行缓存，因此最后都会实际落到HDD上进行操作，而对HDD而言，本身会延缓执行，等待一小段时间，然后将请求排序再执行，因此即便是基于request的模式，将bio生成request相对而言的额外时间开销对系统影响不大。在随机读写性能方面，qscache系统远超HDD的性能，可见将SSD作为缓存很好地发挥了作用。在随机读时，性能整体能达到flashcache的水平，而在随机写时，基于bio的模式仍能大致维持flashcache的性能，但基于request的模式性能随着I/O块的增大急剧衰减，推测是由于I/O的增大，将bio生成request的过程也会相应消耗更多时间，导致系统整体性能下降。
 
 \section{I/O带宽按权限分配测试}
 
@@ -211,7 +216,6 @@ qscache以基于request的模式启动，初始化操作如下：
         \bottomrule
     \end{tabular}
 \end{table}
-
 
 \section{qscache的多缓存设备对多后台设备}
 

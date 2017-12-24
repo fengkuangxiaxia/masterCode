@@ -52,7 +52,7 @@ qscache系统整体采用分层架构，利用SSD较高的随机读写性能将S
 \end{figure}
 
 \section{数据映射策略}
-在\ref{sec:qscache_architecture}提到qscache系统采用的是缓存分层架构，将SSD分别作为HDD的随机I/O缓存。一般而言，在这种架构下，SSD上的数据是HDD上的子集，因此直接采用取模运算的映射方式比较方便，在\ref{flashcache_mapping}介绍过flashCache正是使用了这种映射策略，下面将进一步介绍这种映射策略。 
+在\ref{sec:qscache_architecture}提到qscache系统采用的是缓存分层架构，将SSD分别作为HDD的随机I/O缓存。一般而言，在这种架构下，SSD上的数据是HDD上的子集，因此直接采用取模运算的映射方式比较方便，在\ref{sec:flashcache_mapping}介绍过flashCache正是使用了这种映射策略，下面将进一步介绍这种映射策略。 
 
 \subsection{数据映射粒度}
 

@@ -16,7 +16,7 @@
 flashcache基于device mapper，采用分层架构，缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
 
 \subsection{数据映射策略}
-\label{flashcache_mapping}
+\label{sec:flashcache_mapping}
 flashcache采用块级映射策略中的组关联映射规则，通过set associative hash\cite{kimmel2014set}将缓存设备分成多个固定大小的set(一个set默认为512个block)并组织起来，将请求的block的起始扇区(dbn)通过公式\ref{eq:dbn_to_set}映射到target set，再在target set内部进行线性探测获取block，如图\ref{fig:flashcache_map}所示。
 
 \begin{equation}
@@ -136,7 +136,7 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 
 测试环境如表\ref{tab:test_environment}所示
 
-\begin{table}[!hpb]
+\begin{table}[H]
     \centering
     \bicaption[tab:test_environment]{flashcache、dm-cache、bcache读写性能测试环境}{flashcache、dm-cache、bcache读写性能测试环境}{Table}{test environment of flashcache, dm-cache and bcache}
     \begin{tabular}{cc} \toprule
@@ -151,7 +151,7 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 
 表\ref{tab:standard_test}为对被用作缓存设备的SSD进行的基准测试，以与后续测试进行对比，可以发现当使用XFS文件系统时性能有所下降，这是由于文件系统相比裸盘多了元数据的修改操作。
 
-\begin{table}[!hpb]
+\begin{table}[H]
     \centering
     \bicaption[tab:standard_test]{基准测试}{基准测试}{Table}{standard test}
     \begin{tabular}{cccc} 
@@ -168,7 +168,7 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 
 表\ref{tab:flashcache_test}为使用flashcache的测试，由于flashcache只严格缓存缓存块大小边界对齐的数据，由于XFS文件系统默认块大小为4K，大于这个大小的IO文件系统的边界和块设备的边界未必对齐，所以在flashcache中不会被缓存，因此缓存块32k IO块32K XFS条件下的性能接近磁盘的性能。 
 
-\begin{table}[!hpb]
+\begin{table}[H]
     \centering
     \bicaption[tab:flashcache_test]{flashcache测试}{flashcache测试}{Table}{flashcache test}
     \begin{tabular}{cccc} 
@@ -185,14 +185,14 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 
 表\ref{tab:dm-cache_test}为使用dm-cache的测试。dm-cache的缓存块大小范围设置为32KB-1GB，可以发现dm-cache框架下使用XFS文件系统比使用裸盘的性能高，这是由于dm-cache采用了smq算法，而XFS文件系统的数据组织结构导致了这一结果。 
 
-\begin{table}[!hpb]
+\begin{table}[H]
     \centering
     \bicaption[tab:dm-cache_test]{dm-cache测试}{dm-cache测试}{Table}{dm-cache test}
     \begin{tabular}{cccc} 
       \toprule
       I/O类型 & 随机读IOPS & 随机写IOPS & 混合随机读写(r/w) \\ 
       \midrule
-      缓存块32KB，I/O块4KB，裸盘 & 700-1200 & 10.2k & 6787/6878 \\
+      缓存块32KB，I/O块4KB，裸盘 & 11.3k & 700-1200 & 6787/6878 \\
       缓存块32KB，I/O块4KB，XFS & 17.2k & 11.9k & 4777/4850 \\
       缓存块32KB，I/O块32KB，裸盘 & 4260 & 3009 & 671/673 \\
       缓存块32KB，I/O块32KB，XFS & 4055 & 3032 & 1467/1471 \\
@@ -202,7 +202,7 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 
 表\ref{tab:bcache_test}为使用bcache的测试。由于bcache没有缓存块的概念，可以缓存任意长度的I/O对象，因此在小IO时表现优异。
 
-\begin{table}[!hpb]
+\begin{table}[H]
     \centering
     \bicaption[tab:bcache_test]{bcache测试}{bcache测试}{Table}{bcache test}
     \begin{tabular}{cccc} 
@@ -217,8 +217,36 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
     \end{tabular}
 \end{table}
 
-从测试来看flashcache的缓存要求非常严格，必须设备边界对齐且长度一致才能被缓存，dm-cache和bcache则没这个限制。在I/O块4k时bcache表现优异，但是在大I/O块时表现不如flashcache和dm-cache。当缓存命中率接近100\%时，flashcache性能要略优于dm-cache。
+基准测试、flashcache、dm-cache、bcache的随机读性能对比图如图\ref{fig:opensource_randread}所示。可以看到flashcache和bcache的性能比较接近而dm-cache在小I/O块的时候性能不如flashcache和bcache，这是由于dm-cache的缓存块大小最小为32K，在小I/O块下，需要先从磁盘上提升数据再进行I/O操作。总的来看，在小I/O块时flashcache、dm-cache和bcache的性能都无法达到SSD的性能，而在大I/O块时则基本都接近SSD的性能。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{opensource_randread.pdf}
+    \bicaption[fig:opensource_randread]{基准测试、flashcache、dm-cache、bcache随机读性能对比}{基准测试、flashcache、dm-cache、bcache随机读性能对比}{Fig}{comparison of random read among standard, flashcache, dm-cache and bcache}
+\end{figure}
+
+随机写性能对比图如图\ref{fig:opensource_randwrite}所示。可以看到相比随机读性能，flashcache、dm-cache和bcache三者的差距在小I/O时拉的更开，而在大I/O块时同样性能比较接近。与随机读不同，在随机写时，bcache的性能总体与SSD的性能持平，这是由于bcache采用日志追加的方式进行写操作处理，因此在小I/O块时性能非常优异。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{opensource_randwrite.pdf}
+    \bicaption[fig:opensource_randwrite]{基准测试、flashcache、dm-cache、bcache随机写性能对比}{基准测试、flashcache、dm-cache、bcache随机写性能对比}{Fig}{comparison of random write among standard, flashcache, dm-cache and bcache}
+\end{figure}
+
+混合随机读写性能对比图如图\ref{fig:opensource_randrw_read}和图\ref{fig:opensource_randrw_write}所示。可以看到总体趋势仍然是在小I/O块时flashcache、dm-cache、bcache的性能差距会比较大，在大I/O块时性能则都很接近。并且总的来看，混合随机读写下，读性能与写性能几乎一样。与单纯的随机读或随机写性能差距较大的是bcache，在混合随机读写下bcache在小I/O块且使用XFS文件系统时性能有极具衰减。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{opensource_randrw_read.pdf}
+    \bicaption[fig:opensource_randrw_read]{基准测试、flashcache、dm-cache、bcache混合随机读写中读性能对比}{基准测试、flashcache、dm-cache、bcache混合随机读写中读性能对比}{Fig}{comparison of random read/write read among standard, flashcache, dm-cache and bcache}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{opensource_randrw_write.pdf}
+    \bicaption[fig:opensource_randrw_write]{基准测试、flashcache、dm-cache、bcache混合随机读写中写性能对比}{基准测试、flashcache、dm-cache、bcache混合随机读写中写性能对比}{Fig}{comparison of random read/write write among standard, flashcache, dm-cache and bcache}
+\end{figure}
 
 \section{本章小结}
 
-本章从上章提到的混合存储系统设计中系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合这五个方面对现有三个开源混合存储系统flashcache、dm-cache、bcache进行了分析，并且经过测试给出了flashcache、dm-cache、bcache的特性对比以及性能对比。
+本章从上章提到的混合存储系统设计中系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合这五个方面对现有三个开源混合存储系统flashcache、dm-cache、bcache进行了分析，并且经过测试给出了flashcache、dm-cache、bcache的特性对比以及性能对比。从特性对比来看flashcache在可靠性方面优于另两者，bcache在内存消耗方面有较大不足。从性能测试来看flashcache的缓存要求非常严格，必须设备边界对齐且长度一致才能被缓存，dm-cache和bcache则没这个限制。在I/O块4k时bcache表现优异，但是在大I/O块时表现不如flashcache和dm-cache。当缓存命中率接近100\%时，flashcache性能要略优于dm-cache。
