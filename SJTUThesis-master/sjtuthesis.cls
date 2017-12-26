@@ -85,6 +85,8 @@
 \RequirePackage{float}
 \usetikzlibrary{shapes.geometric, arrows}
 
+\renewcommand*{\bibfont}{\zihao{5}}
+
 %==========
 % Segment 2. Define general-purpose LaTeX commands.
 %==========
@@ -126,7 +128,8 @@
 %==========
 
 % Set the mainfont
-\setmainfont{TeX Gyre Termes}
+%\setmainfont{TeX Gyre Termes}
+\setmainfont{Times New Roman}
 
 %% 行距缩放因子
 \linespread{1.3}
@@ -318,37 +321,43 @@
 \newcommand\defenddate[1]{\def\sjtu@value@defenddate{#1}}
 \newcommand\institute[1]{\def\sjtu@value@institute{#1}}
 \newcommand\chairman[1]{\def\sjtu@value@chairman{#1}}
+\newcommand\degree[1]{\def\sjtu@value@degree{#1}}
+\newcommand\company[1]{\def\sjtu@value@company{#1}}
+\newcommand\maketitlevalue[1]{\  \begin{CJKfilltwosides*}{0pt}{#1}\end{CJKfilltwosides*}}
 
 % “绘制”SJTU中文标题页
 \renewcommand\maketitle[1]{%
   \cleardoublepage
   \thispagestyle{empty}
   \begin{center}
-  {\songti\zihao{-3}\sjtu@label@statement}
+  {\songti\zihao{-2}\sjtu@label@statement}
   \vskip\stretch{1}
-  {\heiti\zihao{3}\sjtu@value@title}
+  {\heiti\zihao{2}\sjtu@value@title}
   \vskip\stretch{1}
-  {\fangsong\zihao{4}}
+  {\songti\zihao{4}}
   \def\tabcolsep{1pt}
   \def\arraystretch{1.5}
   \begin{tabular}{rl}
     \ifsjtu@review
-      \begin{CJKfilltwosides}{4em}\heiti\sjtu@label@author\end{CJKfilltwosides} & \underline{\makebox[150pt]{}}\\
-      \begin{CJKfilltwosides}{4em}\heiti\sjtu@label@studentnumber\end{CJKfilltwosides} & \underline{\makebox[150pt]{}} \\
-      \begin{CJKfilltwosides}{4em}\heiti\sjtu@label@advisor\end{CJKfilltwosides}  & \underline{\makebox[150pt]{}} \\ 
+      \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@author\end{CJKfilltwosides}： & {}\\
+      \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@studentnumber\end{CJKfilltwosides}： & {} \\
+      \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@advisor\end{CJKfilltwosides}：  & {} \\ 
       \ifx\sjtu@value@coadvisor\undefined\else
-        \begin{CJKfilltwosides}{4em}\heiti\sjtu@label@coadvisor\end{CJKfilltwosides} & \underline{\makebox[150pt]{}} \\ 
+        \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@coadvisor\end{CJKfilltwosides}： & {} \\ 
       \fi
     \else
-      \begin{CJKfilltwosides}{4em}\heiti\sjtu@label@author\end{CJKfilltwosides}	& \underline{\makebox[150pt]{\sjtu@value@author}} \\
-      \begin{CJKfilltwosides}{4em}\heiti\sjtu@label@studentnumber\end{CJKfilltwosides} & \underline{\makebox[150pt]{\sjtu@value@studentnumber}} \\
-      \begin{CJKfilltwosides}{4em}\heiti\sjtu@label@advisor\end{CJKfilltwosides} 	 & \underline{\makebox[150pt]{\sjtu@value@advisor}} \\ 
+      \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@author\end{CJKfilltwosides}：	& \maketitlevalue{\sjtu@value@author}\\
+      \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@studentnumber\end{CJKfilltwosides}： & \maketitlevalue{\sjtu@value@studentnumber}\\
+      \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@advisor\end{CJKfilltwosides}： & \maketitlevalue{\sjtu@value@advisor} \\ 
       \ifx\sjtu@value@coadvisor\undefined\else
-        \begin{CJKfilltwosides}{4em}\heiti\sjtu@label@coadvisor\end{CJKfilltwosides} 	 & \underline{\makebox[150pt]{\sjtu@value@coadvisor}} \\ 
+        \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@coadvisor\end{CJKfilltwosides}： & \maketitlevalue{\sjtu@value@coadvisor}\\ 
       \fi
     \fi
-      \begin{CJKfilltwosides}{4em}\heiti\sjtu@label@major\end{CJKfilltwosides} 	 & \underline{\makebox[150pt]{\sjtu@value@major}} \\
-      \begin{CJKfilltwosides}{4em}\heiti\sjtu@label@defenddate\end{CJKfilltwosides} 	 & \underline{\makebox[150pt]{\sjtu@value@defenddate}}
+      \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@degree\end{CJKfilltwosides}： & \maketitlevalue{\sjtu@value@degree} \\
+      \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@major\end{CJKfilltwosides}： & \maketitlevalue{\sjtu@value@major} \\
+      \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@institute\end{CJKfilltwosides}： & \maketitlevalue{\sjtu@value@institute} \\
+      \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@defenddate\end{CJKfilltwosides}：& \maketitlevalue{\sjtu@value@defenddate} \\
+      \begin{CJKfilltwosides}{6em}\heiti\sjtu@label@company\end{CJKfilltwosides}： & \maketitlevalue{\sjtu@value@company}
   \end{tabular}
   \end{center}
   \vskip \stretch{0.5}
@@ -371,30 +380,36 @@
   \cleardoublepage
   \thispagestyle{empty}
   \begin{center}
-      {\normalfont\zihao{4} \sjtu@label@englishstatement} 
-      \vspace{20pt} \vskip\stretch{1}
-      {\huge\sjtu@value@englishtitle \vskip 1pt}
-      \vskip \stretch{1}
-    \ifsjtu@review
-      \vskip \stretch{1}
-      \vskip 3pt
-      \vskip \stretch{2}
-    \else
-      {\normalfont\zihao{4}\sjtu@value@englishauthor} 
-      \vskip \stretch{1}
-      {\normalfont\zihao{4}\sjtu@label@englishadvisor} 
-      \vskip 2pt
-      {\normalfont\zihao{4}\sjtu@value@englishadvisor} 
-      \vskip 5pt
-      \ifx\sjtu@value@englishcoadvisor\undefined\else
-        {\normalfont\zihao{4}\sjtu@label@englishcoadvisor} 
-        \vskip 2pt
-        {\normalfont\zihao{4}\sjtu@value@englishcoadvisor} 
-        \vskip \stretch{2}
-      \fi
-    \fi 
-    \normalfont\sjtu@value@englishinstitute \vskip 30pt
-    \normalfont\sjtu@value@englishdate \vskip 20pt
+      {\normalfont\zihao{-2} \sjtu@label@englishstatement} 
+      \vskip\stretch{1}
+      \begin{minipage}{0.7\textwidth}
+        \begin{center}
+        {\zihao{2}\textbf{\sjtu@value@englishtitle \vskip 1pt}}
+        \end{center}
+      \end{minipage}
+      \vskip\stretch{1}
+      \begin{tabular}{ll}
+        \ifsjtu@review
+          \textbf{\sjtu@label@englishauthor:} & {}\\
+            \textbf{\sjtu@label@englishstudentnumber:} & {}\\
+            \textbf{\sjtu@label@englishadvisor:} & {}\\
+          \ifx\sjtu@value@englishcoadvisor\undefined\else
+            \textbf{\sjtu@label@englishcoadvisor:} & {}\\
+          \fi
+        \else
+          \textbf{\sjtu@label@englishauthor:} & \sjtu@value@englishauthor\\
+          \textbf{\sjtu@label@englishstudentnumber:} & \sjtu@value@studentnumber\\
+          \textbf{\sjtu@label@englishadvisor:} & \sjtu@value@englishadvisor\\
+          \ifx\sjtu@value@englishcoadvisor\undefined\else
+            \textbf{\sjtu@label@englishcoadvisor:} & \sjtu@value@englishcoadvisor\\
+          \fi 
+        \fi
+          \textbf{\sjtu@label@englishdegree:} & \sjtu@value@englishdegree\\
+          \textbf{\sjtu@label@englishmajor:} & \sjtu@value@englishmajor\\
+          \textbf{\sjtu@label@englishinstitute:} & \sjtu@value@englishinstitute\\
+          \textbf{\sjtu@label@englishdefenddate:} & \sjtu@value@englishdate\\
+          \textbf{\sjtu@label@englishcompany:} & \sjtu@value@englishschool
+      \end{tabular}
   \end{center}
   \cleardoublepage
 }
