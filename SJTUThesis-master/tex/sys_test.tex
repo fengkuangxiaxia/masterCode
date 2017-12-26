@@ -121,7 +121,7 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{seq_read.pdf}
-    \bicaption[fig:seq_read_comparison]{HDD、flashcache、qscache顺序读性能对比图}{HDD、flashcache、qscache顺序读性能对比图}{Fig}{comparison of sequential read among HDD, flashcache and qscache}
+    \bicaption[fig:seq_read_comparison]{HDD、flashcache、qscache顺序读性能对比图}{HDD、flashcache、qscache顺序读性能对比图}{Fig.}{comparison of sequential read among HDD, flashcache and qscache}
 \end{figure}
 
 四者的顺序写性能对比如图\ref{fig:seq_write_comparison}所示，可以看到基于HDD的系统的吞吐量能达到200MB/s，而flashcache大约为130MB/s，基于bio的qscache差不多在110MB/s左右，而基于request的qscache和基于bio差不多，大约为110MB/s。这是因为，对于基于HDD的系统而言，写请求直接向HDD上写数据，不需要经历额外步骤；对于flashcache，当设置也缓存顺序操作时，需要先访问SSD查询缓存是否命中，如果未命中还需要去HDD中读取数据并可能会替换缓存，然后对缓存中的数据进行更改，并会发生写回，因此额外开销较多；对于基于bio的qscache，由于总体设计和策略与flashcache差不多，因此性能相差不多；对于基于request的qscache，由于将原本立刻提交的bio请求延缓放入request中，因此性能有所下降。
@@ -129,7 +129,7 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{seq_write.pdf}
-    \bicaption[fig:seq_write_comparison]{HDD、flashcache、qscache顺序写性能对比图}{HDD、flashcache、qscache顺序写性能对比图}{Fig}{comparison of sequential write among HDD, flashcache and qscache}
+    \bicaption[fig:seq_write_comparison]{HDD、flashcache、qscache顺序写性能对比图}{HDD、flashcache、qscache顺序写性能对比图}{Fig.}{comparison of sequential write among HDD, flashcache and qscache}
 \end{figure}
 
 \subsection{随机读写性能对比}
@@ -174,13 +174,13 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.8\textwidth]{rand_read.pdf}
-    \bicaption[fig:rand_read_comparison]{HDD、flashcache、qscache随机读性能对比图}{HDD、flashcache、qscache随机读性能对比图}{Fig}{comparison of random read among HDD, flashcache and qscache}
+    \bicaption[fig:rand_read_comparison]{HDD、flashcache、qscache随机读性能对比图}{HDD、flashcache、qscache随机读性能对比图}{Fig.}{comparison of random read among HDD, flashcache and qscache}
 \end{figure}
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.8\textwidth]{rand_write.pdf}
-    \bicaption[fig:rand_write_comparison]{HDD、flashcache、qscache随机写性能对比图}{HDD、flashcache、qscache随机写性能对比图}{Fig}{comparison of random write among HDD, flashcache and qscache}
+    \bicaption[fig:rand_write_comparison]{HDD、flashcache、qscache随机写性能对比图}{HDD、flashcache、qscache随机写性能对比图}{Fig.}{comparison of random write among HDD, flashcache and qscache}
 \end{figure}
 
 \subsection{测试分析}

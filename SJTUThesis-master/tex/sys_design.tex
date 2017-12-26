@@ -40,7 +40,7 @@
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{system_architecture.pdf}
-    \bicaption[fig:system_architecture]{qscache系统整体架构}{qscache系统整体架构}{Fig}{qscache overall system architecture}
+    \bicaption[fig:system_architecture]{qscache系统整体架构}{qscache系统整体架构}{Fig.}{qscache overall system architecture}
 \end{figure}
 
 qscache系统整体采用分层架构，利用SSD较高的随机读写性能将SSD用作随机I/O缓存，将HDD作为源存储介质存储所有的数据，SSD上存储HDD中数据的子集，系统可用容量等于HDD的总容量。数据的流动规则如图\ref{fig:data_flow}所示，系统将随机I/O请求交由SSD处理，将随机I/O请求交由HDD处理，SSD与HDD之间进行数据的交换，HDD将热数据写入到SSD中提高系统整体的性能，SSD将被替换的数据写回到HDD中保证系统的一致性。
@@ -48,7 +48,7 @@ qscache系统整体采用分层架构，利用SSD较高的随机读写性能将S
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{data_flow.pdf}
-    \bicaption[fig:data_flow]{数据流示意图}{数据流示意图}{Fig}{data flow}
+    \bicaption[fig:data_flow]{数据流示意图}{数据流示意图}{Fig.}{data flow}
 \end{figure}
 
 \section{数据映射策略}
@@ -97,7 +97,7 @@ qscache系统通过对不同进程按照各自权限分配IOPS来限制不同进
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.8\textwidth]{system_io_scheduler.pdf}
-    \bicaption[fig:system_io_scheduler]{I/O带宽分配流程}{I/O带宽分配流程}{Fig}{I/O bandwidth quota process}
+    \bicaption[fig:system_io_scheduler]{I/O带宽分配流程}{I/O带宽分配流程}{Fig.}{I/O bandwidth quota process}
 \end{figure}
 
 \section{本章小结}

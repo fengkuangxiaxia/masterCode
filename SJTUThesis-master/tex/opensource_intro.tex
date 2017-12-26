@@ -27,7 +27,7 @@ flashcache采用块级映射策略中的组关联映射规则，通过set associ
 \begin{figure}[!htp]
     \centering
     \includegraphics[width=0.8\textwidth]{flashcache_map.pdf}
-    \bicaption[fig:flashcache_map]{flashcache的组相联映射}{flashcache的组相联映射}{Fig}{group mapping in flashcache}
+    \bicaption[fig:flashcache_map]{flashcache的组相联映射}{flashcache的组相联映射}{Fig.}{group mapping in flashcache}
 \end{figure}
 
 \subsection{冷热数据识别策略}
@@ -222,7 +222,7 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{opensource_randread.pdf}
-    \bicaption[fig:opensource_randread]{基准测试、flashcache、dm-cache、bcache随机读性能对比}{基准测试、flashcache、dm-cache、bcache随机读性能对比}{Fig}{comparison of random read among standard, flashcache, dm-cache and bcache}
+    \bicaption[fig:opensource_randread]{基准测试、flashcache、dm-cache、bcache随机读性能对比}{基准测试、flashcache、dm-cache、bcache随机读性能对比}{Fig.}{comparison of random read among standard, flashcache, dm-cache and bcache}
 \end{figure}
 
 随机写性能对比图如图\ref{fig:opensource_randwrite}所示。可以看到相比随机读性能，flashcache、dm-cache和bcache三者的差距在小I/O时拉的更开，而在大I/O块时同样性能比较接近。与随机读不同，在随机写时，bcache的性能总体与SSD的性能持平，这是由于bcache采用日志追加的方式进行写操作处理，因此在小I/O块时性能非常优异。
@@ -230,7 +230,7 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{opensource_randwrite.pdf}
-    \bicaption[fig:opensource_randwrite]{基准测试、flashcache、dm-cache、bcache随机写性能对比}{基准测试、flashcache、dm-cache、bcache随机写性能对比}{Fig}{comparison of random write among standard, flashcache, dm-cache and bcache}
+    \bicaption[fig:opensource_randwrite]{基准测试、flashcache、dm-cache、bcache随机写性能对比}{基准测试、flashcache、dm-cache、bcache随机写性能对比}{Fig.}{comparison of random write among standard, flashcache, dm-cache and bcache}
 \end{figure}
 
 混合随机读写性能对比图如图\ref{fig:opensource_randrw_read}和图\ref{fig:opensource_randrw_write}所示。可以看到总体趋势仍然是在小I/O块时flashcache、dm-cache、bcache的性能差距会比较大，在大I/O块时性能则都很接近。并且总的来看，混合随机读写下，读性能与写性能几乎一样。与单纯的随机读或随机写性能差距较大的是bcache，在混合随机读写下bcache在小I/O块且使用XFS文件系统时性能有极具衰减。
@@ -238,13 +238,13 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{opensource_randrw_read.pdf}
-    \bicaption[fig:opensource_randrw_read]{基准测试、flashcache、dm-cache、bcache混合随机读写中读性能对比}{基准测试、flashcache、dm-cache、bcache混合随机读写中读性能对比}{Fig}{comparison of random read/write read among standard, flashcache, dm-cache and bcache}
+    \bicaption[fig:opensource_randrw_read]{基准测试、flashcache、dm-cache、bcache混合随机读写中读性能对比}{基准测试、flashcache、dm-cache、bcache混合随机读写中读性能对比}{Fig.}{comparison of random read/write read among standard, flashcache, dm-cache and bcache}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{opensource_randrw_write.pdf}
-    \bicaption[fig:opensource_randrw_write]{基准测试、flashcache、dm-cache、bcache混合随机读写中写性能对比}{基准测试、flashcache、dm-cache、bcache混合随机读写中写性能对比}{Fig}{comparison of random read/write write among standard, flashcache, dm-cache and bcache}
+    \bicaption[fig:opensource_randrw_write]{基准测试、flashcache、dm-cache、bcache混合随机读写中写性能对比}{基准测试、flashcache、dm-cache、bcache混合随机读写中写性能对比}{Fig.}{comparison of random read/write write among standard, flashcache, dm-cache and bcache}
 \end{figure}
 
 \section{本章小结}
