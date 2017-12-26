@@ -516,18 +516,22 @@
 \fi
 
 % 中英文摘要
-\newenvironment{abstract}{\cleardoublepage \pdfbookmark[0]{\sjtu@label@abstract}{abstract}
-\chapter*{\sjtu@value@title\vskip 20pt\sjtu@label@abstract}\markboth{\sjtu@label@abstract}{}\addcontentsline{toc}{chapter}{\sjtu@label@abstract}}{}
+\newenvironment{abstract}{\cleardoublepage %\pdfbookmark[0]{\sjtu@label@abstract}{abstract}
+\chapter*{\sjtu@value@title\vskip 20pt\sjtu@label@abstract}
+\addcontentsline{toc}{chapter}{\sjtu@label@abstract}
+\markboth{\sjtu@label@abstract}{}}{}
 \newcommand\keywords[1]{\vspace{2ex}\noindent{\bf\large \sjtu@label@keywords} #1}
-\newenvironment{englishabstract}{\cleardoublepage\pdfbookmark[0]{\sjtu@label@englishabstract}{englishabstract}
-\chapter*{\sjtu@value@englishtitle\vskip 20pt\bfseries \sjtu@label@englishabstract}\markboth{\sjtu@label@englishabstract}{}\addcontentsline{toc}{chapter}{\sjtu@label@englishabstract}}{}
+\newenvironment{englishabstract}{\cleardoublepage%\pdfbookmark[0]{\sjtu@label@englishabstract}{englishabstract}
+\chapter*{\sjtu@value@englishtitle\vskip 20pt\bfseries \sjtu@label@englishabstract}
+\addcontentsline{toc}{chapter}{\sjtu@label@englishabstract}
+\markboth{\sjtu@label@englishabstract}{}}{}
 \newcommand\englishkeywords[1]{\vspace{2ex}\noindent{\bf\large \sjtu@label@englishkeywords} #1}
 
 \renewcommand\tableofcontents{%
   \cleardoublepage
-  \pdfbookmark[0]{\contentsname}{toc}
-  \addcontentsline{toc}{chapter}{\contentsname}
+  %\pdfbookmark[0]{\contentsname}{toc}
   \chapter*{\contentsname}
+  \addcontentsline{toc}{chapter}{\contentsname}
   \@mkboth{\MakeUppercase\contentsname}{\MakeUppercase\contentsname}%
   \@starttoc{toc}%
 }
