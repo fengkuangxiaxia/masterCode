@@ -11,14 +11,14 @@
 
 \section{预备知识}
 
-由于qscache系统位于linux内核态，因此需要对内核中与系统实现相关的基本知识进行介绍。这些预备知识包括Linux存储层次、bio、Device Mapper等。
+由于qscache系统本质是一个块设备，其位于Linux内核态，因此需要对系统在内核中实现所必备的基本知识进行介绍。这些预备知识包括Linux的存储层次、bio、Device Mapper等。
 
 \subsection{Linux存储层次}
 
 Linux存储层次如图\ref{fig:linux_storage_layer}所示，大致可分为共六层\cite{敖青云2011存储技术原理分析}：
 
 \begin{enumerate}
-    \item 最上层位于用户态，对用户看到的文件，用户的应用程序通过调用POSIX接口对这些文件进行操作。
+    \item 最上层位于用户态，对用户看到的文件，用户通过调用POSIX接口对这些文件进行操作。
 
     \item 第二层为虚拟文件系统(VFS, virtual file system)层，位于内核态。VFS的作用为屏蔽其所管理的具体文件系统，使用户可以使用统一的接口进行调用。POSIX在VFS层将数据封装成bio，然后将bio交给挂载的具体文件系统执行操作，bio将在\ref{sec:bio}具体介绍。
 
@@ -41,9 +41,9 @@ Linux存储层次如图\ref{fig:linux_storage_layer}所示，大致可分为共�
 \subsection{bio}
 \label{sec:bio}
 
-bio这一数据结构被用来描述块设备的I/O操作，将内存缓冲区与块设备联系起来的重要桥梁\cite{corbet2005linux}。
+bio这一数据结构被用来描述块设备的I/O操作，通过bio，内存缓冲区与块设备被联系起来\cite{corbet2005linux}。
 
-bio的具体结构如图\ref{fig:bio}所示。一个bio指针指向由bio结构体组成的链表，bio结构体中的bi\_io\_vec指向一个bi\_vec结构体数组，每个bi\_vec结构体中bv\_page指向内存中的实际页，bv\_offset和bv\_len组合来定位数据在该页中的具体位置，如此，一个bio链表就将散落在内存中的各数据组织为一个块设备请求。
+bio的具体结构如图\ref{fig:bio}所示。一个bio指针指向的是由多个bio结构体串成的链表，bio结构体中的bi\_io\_vec指向一个bi\_vec结构体数组，每个bi\_vec结构体中bv\_page指向内存中的实际页，bv\_offset和bv\_len组合来定位数据在该页中的具体位置，如此，一个bio链表就将散落在内存中的各数据组织为一个块设备请求。
 
 \begin{figure}[!htbp]
     \centering
@@ -53,7 +53,7 @@ bio的具体结构如图\ref{fig:bio}所示。一个bio指针指向由bio结构�
 
 \subsection{Device Mapper}
 
-Device Mapper是Linux2.6 内核中支持逻辑卷管理的通用设备映射机制，它为实现用于存储资源管理的块设备驱动提供了一个高度模块化的内核架构\cite{bovet2005understanding}。Device Mapper以一个块设备驱动在内核中注册，它包含mapped device、mapping table、target device这三个重要概念。mapped device可以理解为内核对外提供的逻辑设备，用户看到的也是这个逻辑设备，mapped device通过mapping table组织与与target device的映射关系，一个mapped device可以映射到一个或者多个target device上，总体层次如图\ref{fig:device_mapper}所示，target device可以是真实的物理设备也可以是另一个mapped device，如此迭代，形成一个树状结构。
+Device Mapper是在Linux2.6内核中引入的支持逻辑卷管理的通用设备映射机制，它提供了一个高度模块化的内核架构用以实现负责管理存储资源的块设备驱动\cite{bovet2005understanding}。Device Mapper以一个块设备驱动在内核中注册，它主要由mapped device、mapping table、target device这三个部分组成。mapped device可以理解为内核对外提供的逻辑设备，用户看到的也是这个逻辑设备，mapped device通过mapping table组织与与target device的映射关系，一个mapped device可以映射到一个或者多个target device上，总体层次如图\ref{fig:device_mapper}所示，target device可以是真实的物理设备也可以是另一个mapped device，如此迭代，形成一个树状结构。
 
 \begin{figure}[!htbp]
     \centering
@@ -72,11 +72,11 @@ mapped device基于request还是基于bio的主要区别在于，如果是基于
 
 \subsection{其他预备知识}
 
-在qscache系统的实现过程中，除了上面介绍的几个关键知识点外，还涉及很多其他的Linux内核知识，比如Linux的内核模块编程、内核编程中的常用宏、常用数据结构、内核的调试等内容，这里不再详细介绍。
+在qscache系统的实现过程中，除了上面介绍的几个关键知识点外，还涉及很多其他的Linux内核知识，比如Linux的内核模块编程、内核编程中的常用宏、常用数据结构、内核的调试等内容，这里不过多展开介绍。
 
 \section{编程实现}
 
-有了上面预备知识的铺垫，就可以比较清楚地介绍qscache系统的编程实现了。下面将着重介绍qscache系统基于Device Mapper机制的系统架构实现、系统信息组织与管理的实现、冷热数据识别算法的实现以及多缓存设备对多后台设备的实现。本系统基于的内核版本为linux 3.10.108。
+有了上面预备知识的铺垫，就可以比较清楚地介绍qscache系统的编程实现了。下面将着重介绍qscache系统基于Device Mapper机制的系统架构实现、系统信息组织与管理的实现、冷热数据识别算法的实现以及多缓存设备对多后台设备的实现。本系统基于的内核版本为Linux 3.10.108。
 
 \subsection{系统架构实现}
 
@@ -202,7 +202,7 @@ dm\_io\_async\_bvec()的处理流程如图\ref{fig:process_dm_io_async_bvec}所�
 
 \subsection{系统信息组织与管理的实现}
 
-qscache系统的系统信息由一个全局的数据结构cache\_c进行统一管理。cache\_c中的主要成员类型及其作用如表\ref{tab:cache_c}所示。其他诸如黑名单、白名单也在cache\_c中。相关冷热数据识别要用到的数据结构，则以set为单位存放在cache\_sets这一结构体中。
+qscache系统的系统信息由数据结构cache\_c进行统一管理，该结构为一全局变量。cache\_c中的主要成员类型及其作用如表\ref{tab:cache_c}所示。其他诸如黑名单、白名单也在cache\_c中。相关冷热数据识别要用到的数据结构，则以set为单位存放在cache\_sets这一结构体中。
 
 \begin{table}[!htbp]
     \centering
@@ -242,4 +242,4 @@ qscache系统的系统信息由一个全局的数据结构cache\_c进行统一�
 
 
 \section{本章小结}
-本章介绍了qscache系统在实现中需要的预备知识以及具体的实现方法。预备知识主要介绍了Linux存储层次、bio和Device Mapper。具体的实现方法主要介绍了基于Device Mapper机制的系统架构实现、系统信息组织与管理的实现、冷热数据识别算法的实现以及多缓存设备对多后台设备的实现，其中尤其详细地介绍了如何修改Device Mapper的代码以支持基于request的混合存储系统的实现以及qscache基于bio和基于request两种模式的实现。
+本章介绍了qscache系统在实现中需要的预备知识以及具体的实现方法。预备知识主要介绍了Linux存储层次、bio和Device Mapper。具体的实现方法主要介绍了基于Device Mapper机制的系统架构实现、系统信息组织与管理的实现、冷热数据识别算法的实现以及多缓存设备对多后台设备的实现，并且详细地介绍了如何修改Device Mapper的代码以支持基于request的混合存储系统的实现以及qscache基于bio和基于request两种模式的实现。
