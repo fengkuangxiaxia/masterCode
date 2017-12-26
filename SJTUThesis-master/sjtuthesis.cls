@@ -481,18 +481,25 @@
 	\if@twoside
 	  %% 正文页眉页脚
 	  \fancypagestyle{main}{
-	    \fancyhead[LO, RE]{\small\kaishu\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
-	    \fancyhead[RO]{\nouppercase{\small\kaishu\leftmark}}
-	    \fancyhead[LE]{\nouppercase{\small\kaishu\sjtu@value@titlemark}}
+	    %\fancyhead[LO, RE]{\small\kaishu\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
+	    %\fancyhead[RO]{\nouppercase{\small\kaishu\leftmark}}
+      %\fancyhead[LE]{\nouppercase{\small\kaishu\sjtu@value@titlemark}}
+      \fancyhead[L]{}
+      \fancyhead[R]{}
+      \fancyhead[CO]{\songti\zihao{-5}\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
+      \fancyhead[CE]{\nouppercase{\songti\zihao{-5}\leftmark}}
 	    \fancyfoot[C]{\small ---~{\bfseries\thepage}~---}
 	    \renewcommand{\headheight}{32pt}
 	  }
 	  %% 开章页页眉页脚
 	  \fancypagestyle{plain}{
 	    \fancyhf{}
-	    \fancyhead[LO,RE]{\nouppercase{\small\kaishu\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}}
-	    \fancyhead[RO]{\nouppercase{\small\kaishu\leftmark}}
-	    \fancyhead[LE]{\nouppercase{\small\kaishu\sjtu@value@titlemark}}
+	    %\fancyhead[LO,RE]{\nouppercase{\small\kaishu\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}}
+	    %\fancyhead[RO]{\nouppercase{\small\kaishu\leftmark}}
+      %\fancyhead[LE]{\nouppercase{\small\kaishu\sjtu@value@titlemark}}
+      \fancyhead[L]{}
+      \fancyhead[R]{}
+      \fancyhead[C]{\nouppercase{\songti\zihao{-5}\leftmark}}
 	    \fancyfoot[C]{\small ---~{\bf\thepage}~---}
 	    \renewcommand{\headheight}{32pt}
 	  }
