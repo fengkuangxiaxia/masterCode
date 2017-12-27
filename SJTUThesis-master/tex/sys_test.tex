@@ -4,7 +4,7 @@
 %%==================================================
 
 %\bibliographystyle{sjtu2}%[此处用于每章都生产参考文献]
-\chapter{系统测试}
+\chapter{qscache系统测试}
 \label{chap:sys_test}
 
 qscache系统的测试工作由测试目标与测试方法、qscache系统性能测试、qscache系统功能性测试这三个部分组成，接下来将分别进行介绍。
@@ -13,7 +13,7 @@ qscache系统的测试工作由测试目标与测试方法、qscache系统性能
 
 \subsection{测试目标}
 
-测试目标就是要检验对于qscache系统设计目标是否都有达到预期，即qscache系统是否具有大容量、低成本、高顺序读写性能、高随机读写性能并且支持多缓存设备对多后台设备、I/O带宽按权限分配。
+测试目标为检验对于qscache系统的设计是否都有达到预期，即qscache系统是否具有大容量、低成本、高顺序读写性能、高随机读写性能并且支持多缓存设备对多后台设备、I/O带宽按权限分配。
 
 qscache系统中，缓存设备与后台设备作为Device Mapper的target device被加载到系统中，qscache系统的容量取决于被加载的后台设备的容量。只要系统能支持多缓存设备、多后台设备，那么qscache系统就能以多块HDD作为后台设备提供大存储容量。在qscache系统中，缓存设备的容量一般取后台设备的十分之一到八分之一，对于1TB的HDD作为后台设备，取128G的SSD作为缓存设备，系统的成本还是可接受的。因此，测试的内容主要落在qscache系统的性能上以及qscache系统是否支持I/O带宽按权限分配，需要对qscache系统的顺序读写性能与随机读写性能进行测试，验证是否达到预计目标。另外需要开启多个进程设置不同权限，验证不同进程被分配到的I/O带宽是否按权限分配。
 
@@ -60,30 +60,27 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
 四个系统的初始化操作如下：
 
 \begin{enumerate}
-    \item 基于HDD系统的初始化
+    \item 基于HDD的系统的初始化
           \begin{enumerate}
-              \item 格式化文件系统为ext4:mkfs.ext4 /dev/sdi
+              \item 无
           \end{enumerate}
     \item flashcache的初始化
     \begin{enumerate}
         \item 编译，需要内核的源码树：make KERNEL\_TREE=/usr/src/linux-3.10.108/
         \item 加载：insmod src/flashcache.ko
         \item 以写回模式创建系统，缓存设备容量120GB，后台设备容量1TB，mapped device命名为cachedev：flashcache\_create -p back cachedev /dev/sdb /dev/sdi
-        \item 格式化文件系统为ext4:mkfs.ext4 /dev/mapper/cachedev
     \end{enumerate}
     \item 基于bio的qscache的初始化
     \begin{enumerate}
         \item 编译，需要内核的源码树：make KERNEL\_TREE=/usr/src/linux-3.10.108/
         \item 加载，以基于request的模式加载：insmod src/qscache.ko request\_based=0
         \item 以写回模式创建系统，缓存设备容量120GB，后台设备容量1TB，mapped device命名为cachedev：qscache\_create -p back -n cachedev -c /dev/sdb -h /dev/sdi
-        \item 格式化文件系统为ext4:mkfs.ext4 /dev/mapper/cachedev
     \end{enumerate}
     \item 基于request的qscache的初始化
     \begin{enumerate}
         \item 编译，需要内核的源码树：make KERNEL\_TREE=/usr/src/linux-3.10.108/
         \item 加载，以基于request的模式加载：insmod src/qscache.ko request\_based=1
         \item 以写回模式创建系统，缓存设备容量120GB，后台设备容量1TB，mapped device命名为cachedev：qscache\_create -p back -n cachedev -c /dev/sdb -h /dev/sdi
-        \item 格式化文件系统为ext4:mkfs.ext4 /dev/mapper/cachedev
     \end{enumerate}
 \end{enumerate}
 
@@ -169,7 +166,7 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
 \end{table}
 
 
-四者的随机读性能对比如图\ref{fig:rand_read_comparison}所示，随机写性能对比如图\ref{fig:rand_write_comparison}所示，可以看到机遇HDD的系统在随机读写方面性能极差，IOPS大约只有200-300，而flashcache和基于bio的qscache以及基于request的qscache的IOPS大约在5000到15000，总的来说flashcache和基于bio的qscache和基于request的qscache在随机读方面性能比较相近，而在随机写方面flashcache和基于bio的qscache性能相近而基于request的qscache性能则较差。
+四者的随机读性能对比如图\ref{fig:rand_read_comparison}所示，随机写性能对比如图\ref{fig:rand_write_comparison}所示，可以看到基于HDD的系统在随机读写方面性能，IOPS大约只有200-300，而flashcache和基于bio的qscache以及基于request的qscache的IOPS大约在5000到15000，总的来说flashcache和基于bio的qscache和基于request的qscache在随机读方面性能比较相近，而在随机写方面flashcache和基于bio的qscache性能相近而基于request的qscache性能则较差。
 
 \begin{figure}[!htbp]
     \centering
@@ -185,7 +182,7 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
 
 \subsection{测试分析}
 
-从测试结果来看，在顺序读写性能方面，qscache系统仍无法达到HDD的水平，由于qscache系统整体设计基于flashcache，因此性能大致与flashcache接近，另外可以发现不论是基于bio还是基于request，qscache系统的顺序读写性能也基本接近，这是由于对于顺序读写，系统会进行判断，将大部分顺序请求过滤不进行缓存，因此最后都会实际落到HDD上进行操作，而对HDD而言，本身会延缓执行，等待一小段时间，然后将请求排序再执行，因此即便是基于request的模式，将bio生成request相对而言的额外时间开销对系统影响不大。在随机读写性能方面，qscache系统远超HDD的性能，可见将SSD作为缓存很好地发挥了作用。在随机读时，性能整体能达到flashcache的水平，而在随机写时，基于bio的模式仍能大致维持flashcache的性能，但基于request的模式性能随着I/O块的增大急剧衰减，推测是由于I/O的增大，将bio生成request的过程也会相应消耗更多时间，导致系统整体性能下降。
+从测试结果来看，在顺序读写性能方面，qscache系统仍无法达到HDD的水平，由于qscache系统整体设计基于flashcache，因此性能大致与flashcache接近，另外可以发现不论是基于bio还是基于request，qscache系统的顺序读写性能也基本接近，这是由于对于顺序读写，系统会进行判断，将大部分顺序请求过滤不进行缓存，因此最后都会实际落到HDD上进行操作，而对HDD而言，本身会延缓执行，等待一小段时间，然后将请求排序再执行，因此即便是基于request的模式，将bio生成request相对而言的额外时间开销对系统影响不大。在随机读写性能方面，qscache系统远超HDD的性能，可见将SSD作为缓存很好地发挥了作用。在随机读时，性能整体能达到flashcache的水平，而在随机写时，基于bio的模式仍能大致维持flashcache的性能，但基于request的模式性能随着I/O块的增大急剧衰减，这是由于I/O的增大，将bio生成request的过程也会相应消耗更多时间，导致系统整体性能下降。
 
 \section{I/O带宽按权限分配测试}
 
@@ -219,7 +216,7 @@ qscache以基于request的模式启动，初始化操作如下：
 
 \section{qscache的多缓存设备对多后台设备}
 
-多缓存设备对多后台设备的测试环境为仿真环境，在虚拟机中添加多块SSD盘与多块HDD盘进行测试，容量设置为4块1G大小的SSD、2块2G大小的SSD、1块4G大小的SSD以及2块10G大小的HDD与1块20G大小的HDD。1G的SSD为/dev/sdb、/dev/sdc、/dev/sdd、/dev/sde，2G的SSD为/dev/sdf、/dev/sdg，4G的SSD为/dev/sdh，10G的HDD为/dev/sdi、/dev/sdj，20G的HDD/dev/sdk。在系统初始化时分别设置缓存设备为sdh、sdf+sdg、sdb+sdc+sdd+sde，后台设备分别为sdk、sdi+sdj，然后启动系统，测试发现系统都能正常启动，且能正常读写。
+多缓存设备对多后台设备的测试通过使用多块SSD盘与多块HDD盘进行测试，4块容量为128GB大小的SSD、2块256GB大小的SSD以及2块1TB大小的HDD与1块2TB大小的HDD。128GB的SSD为/dev/sdb、/dev/sdc、/dev/sdd、/dev/sde，256GB的SSD为/dev/sdf、/dev/sdg，1TB的HDD为/dev/sdi、/dev/sdj，2TB的HDD/dev/sdk。在系统初始化时分别设置缓存设备为sdf+sdg、sdb+sdc+sdd+sde，后台设备分别为sdk、sdi+sdj，然后启动系统，测试发现系统都能正常启动，且能正常读写。
 
 \section{本章小结}
 

@@ -4,10 +4,10 @@
 %%==================================================
 
 %\bibliographystyle{sjtu2}%[此处用于每章都生产参考文献]
-\chapter{系统设计}
+\chapter{qscache系统设计}
 \label{chap:sys_design}
 
-本章首先介绍基于SSD、HDD的SSD缓存系统qscache的设计动机与设计目标，然后展开描述了系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合等设计。
+本章首先介绍基于SSD、HDD的SSD缓存系统qscache的设计动机与设计目标，然后展开描述了系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合等关键技术的设计。
 
 \section{设计动机与设计目标}
 
@@ -23,7 +23,7 @@
 
 本SSD缓存系统qscache的设计目标如下：
 
-\begin{enumerate}
+\begin{enumerate}[leftmargin=0pt, itemindent=39pt]
     \item 大容量。系统应具有较大的容量，且应能支持多缓存设备对多后台设备的缓存。
     \item 低成本。同样存储容量下，系统的存储成本应接近仅使用HDD的成本。
     \item 高顺序读写性能。系统的顺序读写性能应能达到HDD的性能。
@@ -35,7 +35,7 @@
 \section{系统架构}
 \label{sec:qscache_architecture}
 
-在\ref{chap:opensource_intro}中对不同的开源混合系统进行了对比分析，从系统性能和特性看，flashcache较dm-cache和bcache表现更为优秀，因此本文的qscache系统总体设计基于flashcache，系统总体架构如图\ref{fig:system_architecture}所示。系统首先将缓存设备与后台设备各自虚拟成一个统一的存储空间的虚拟缓存设备和虚拟后台设备进行管理，然后将虚拟缓存设备与虚拟后台设备虚拟为一个设备设备进行统一管理，并提供给用户使用。系统在接收到I/O请求后，通过映射机制将I/O分割后交给缓存管理模块，缓存管理模块对地址查询是否在缓存设备上，如果在缓存设备上则直接返回地址，否则进入数据冷热识别，并经缓存替换策略后发起缓存数据的更新操作。虚拟缓存设备和虚拟后台设备在收到请求后也经过存储位置查找，将对数据块的请求交给对应的真实设备处理。
+在第\ref{chap:opensource_intro}章中对不同的开源混合系统进行了对比分析，从系统性能和特性看，flashcache较dm-cache和bcache表现更为优秀，因此本文的qscache系统总体设计基于flashcache，系统总体架构如图\ref{fig:system_architecture}所示。系统首先将缓存设备与后台设备各自虚拟成一个统一的存储空间的虚拟缓存设备和虚拟后台设备进行管理，然后将虚拟缓存设备与虚拟后台设备虚拟为一个设备设备进行统一管理，并提供给用户使用。系统在接收到I/O请求后，通过映射机制将I/O分割后交给缓存管理模块，缓存管理模块对地址查询是否在缓存设备上，如果在缓存设备上则直接返回地址，否则进入数据冷热识别，并经缓存替换策略后发起缓存数据的更新操作。虚拟缓存设备和虚拟后台设备在收到请求后也经过存储位置查找，将对数据块的请求交给对应的真实设备处理。
 
 \begin{figure}[H]
     \centering
@@ -47,7 +47,7 @@ qscache系统整体采用分层架构，利用SSD的高随机读写性能将SSD�
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{data_flow.pdf}
+    \includegraphics[width=0.7\textwidth]{data_flow.pdf}
     \bicaption[fig:data_flow]{数据流示意图}{数据流示意图}{Fig.}{data flow}
 \end{figure}
 

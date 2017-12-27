@@ -4,20 +4,20 @@
 %%==================================================
 
 %\bibliographystyle{sjtu2}%[此处用于每章都生产参考文献]
-\chapter{系统实现}
+\chapter{qscache系统实现}
 \label{chap:sys_implement}
 
-上一章介绍了qscache系统的设计，这一章将首先介绍qscache系统实现所需的预备知识，进而介绍qscache系统的具体实现。
+上一章介绍了qscache系统的设计，这一章将首先介绍qscache系统实现所依赖的底层结构，进而介绍qscache系统的具体实现。
 
-\section{预备知识}
+\section{qscache系统底层结构}
 
-由于qscache系统本质是一个块设备，其位于Linux内核态，因此需要对系统在内核中实现所必备的基本知识进行介绍。这些预备知识包括Linux的存储层次、bio、Device Mapper等。
+由于qscache系统本质是一个块设备，其位于Linux内核态，因此需要对qscache系统在内核中实现所依赖的底层结构、数据结构、机制进行分析，包括Linux的存储层次、bio的数据结构、Device Mapper机制等。
 
 \subsection{Linux存储层次}
 
 Linux存储层次如图\ref{fig:linux_storage_layer}所示，大致可分为共六层\cite{敖青云2011存储技术原理分析}：
 
-\begin{enumerate}
+\begin{enumerate}[leftmargin=0pt, itemindent=39pt]
     \item 最上层位于用户态，对用户看到的文件，用户通过调用POSIX接口对这些文件进行操作。
 
     \item 第二层为虚拟文件系统(VFS, virtual file system)层，位于内核态。VFS的作用为屏蔽其所管理的具体文件系统，使用户可以使用统一的接口进行调用。POSIX在VFS层将数据封装成bio，然后将bio交给挂载的具体文件系统执行操作，bio将在\ref{sec:bio}具体介绍。
@@ -32,9 +32,9 @@ Linux存储层次如图\ref{fig:linux_storage_layer}所示，大致可分为共�
 
 \end{enumerate}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{linux_storage_layer.pdf}
+    \includegraphics[width=0.9\textwidth]{linux_storage_layer.pdf}
     \bicaption[fig:linux_storage_layer]{Linux存储层次}{Linux存储层次}{Fig.}{linux storage layer}
 \end{figure}
 
@@ -45,9 +45,9 @@ bio这一数据结构被用来描述块设备的I/O操作，通过bio，内存�
 
 bio的具体结构如图\ref{fig:bio}所示。一个bio指针指向的是由多个bio结构体串成的链表，bio结构体中的bi\_io\_vec指向一个bi\_vec结构体数组，每个bi\_vec结构体中bv\_page指向内存中的实际页，bv\_offset和bv\_len组合来定位数据在该页中的具体位置，如此，一个bio链表就将散落在内存中的各数据组织为一个块设备请求。
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{bio.pdf}
+    \includegraphics[width=0.9\textwidth]{bio.pdf}
     \bicaption[fig:bio]{bio结构}{bio结构}{Fig.}{bio structure}
 \end{figure}
 
@@ -69,20 +69,11 @@ Device Mapper的实现原理是将mapped device的make\_request\_fn方法实现�
 
 mapped device基于request还是基于bio的主要区别在于，如果是基于request则request是放在mapped device的request队列中，如果是基于bio，则是在调用generic\_make\_request总将bio封装成request放到真实设备的request队列中。
 
-
-\subsection{其他预备知识}
-
-在qscache系统的实现过程中，除了上面介绍的几个关键知识点外，还涉及很多其他的Linux内核知识，比如Linux的内核模块编程、内核编程中的常用宏、常用数据结构、内核的调试等内容，这里不过多展开介绍。
-
-\section{编程实现}
-
-有了上面预备知识的铺垫，就可以比较清楚地介绍qscache系统的编程实现了。下面将着重介绍qscache系统基于Device Mapper机制的系统架构实现、系统信息组织与管理的实现、冷热数据识别算法的实现以及多缓存设备对多后台设备的实现。本系统基于的内核版本为Linux 3.10.108。
-
-\subsection{系统架构实现}
+\section{系统架构实现}
 
 qscache系统基于Linux的Device Mapper实现，通过研究Linux内核中Device Mapper的相关代码，本研究发现Device Mapper中使用target\_type这一结构体用来管理对mapped device的各种操作，target\_type的主要成员类型及作用见表\ref{tab:target_type}。因此需要定义qscache对应的target\_type，使qscache系统可以通过Device Mapper组织管理不同设备。
 
-\begin{table}[H]
+\begin{table}[!htbp]
     \centering
     \bicaption[tab:target_type]{target\_type的主要成员类型及作用}{target\_type的主要成员类型及作用}{Table}{structure of target\_type}
     \begin{tabular}{ccc} 
@@ -108,15 +99,15 @@ qscache系统基于Linux的Device Mapper实现，通过研究Linux内核中Devic
 
 另外qscache系统对于I/O带宽按权限进行分配的功能将通过使用Linux自带的I/O调度器的CFQ策略，通过为不同进程设置不同的cgroup的weight实现对这些进程按照权重不同分配不同的I/O带宽，但是由于I/O调度器只对request队列起作用，对bio不起作用，因此qscache系统将实现基于bio模式启动与基于request模式启动，对于不同的模式分别定义不同的target\_type然后在模块加载时注册不同的target\_type就以不同模式启动了。但是本研究发现现有的Device Mapper提供的target\_type并不能很好地实现基于request的模式，因此下面将分别对基于bio模式与基于request模式的公用接口函数的实现、基于bio模式的实现以及基于request模式的实现展开详细介绍。
 
-\subsubsection{公用接口函数的实现}
+\subsection{公用接口函数的实现}
 
 qscache系统的公用接口函数为ctr、dtr、status、ioctl、iterate\_devices这五个，下面将分别进行介绍。
 
 ctr接口的实现流程如图\ref{fig:qscache_ctr}所示，ctr负责接收用户传来的各种参数，对相关结构体进行内存的申请工作，对相关的工作队列、等待队列等进行初始化操作，以及对相关参数进行设置，当操作出错时释放已申请的内存空间并返回。
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.8\textwidth]{qscache_ctr.pdf}
+    \includegraphics[width=\textwidth]{qscache_ctr.pdf}
     \bicaption[fig:qscache_ctr]{qscache的ctr接口}{qscache的ctr接口}{Fig.}{process of qscache ctr}
 \end{figure}
 
@@ -128,33 +119,40 @@ ioctl接口负责处理通过ioctl对设备的管理操作，主要接收用户�
 
 iterate\_devices接口负责遍历系统所管理的缓存设备和后台设备，对它们调用指定的函数。
 
-\subsubsection{基于bio模式的实现}
+\subsection{基于bio模式的实现}
 
 基于bio模式的实现主要是target\_type中map接口的实现，map是整个系统数据的入口，map负责对bio请求进行解析，并根据请求的操作类型分别交由不同函数处理。
 
-对于读请求的处理如图\ref{fig:qscache_map_read}所示。首先判断请求是否为可以被缓存的请求，判断的依据是判断进程是否在黑名单中以及依据参数的设置决定是否要缓存顺序请求，如果不能被缓存则直接提交到后台设备执行读操作，如果可以被缓存，则首先在缓存设备中查找数据块，如果找到对应数据块，则将请求提交到缓存上执行读操作，如果没有找到数据块，则将请求提交到后台设备上执行读操作，并根据操作是否可以被缓存以及数据块的热度决定是否要替换缓存块执行对应的缓存块操作。
+对于读请求的处理如图\ref{fig:qscache_map_read}所示。
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.8\textwidth]{qscache_map_read.pdf}
+    \includegraphics[width=\textwidth]{qscache_map_read.pdf}
     \bicaption[fig:qscache_map_read]{qscache的map接口读请求处理}{qscache的map接口读请求处理}{Fig.}{process of qscache map read}
 \end{figure}
 
-对于写请求的处理如图\ref{fig:qscache_map_write}所示。首先判断请求是否为可以被缓存的请求，判断的依据是判断进程是否在黑名单中以及依据参数的设置决定是否要缓存顺序请求，如果不能被缓存则直接提交到后台设备执行写操作，如果可以被缓存，则首先在缓存设备中查找数据块，如果找到对应数据块，则将请求提交到缓存上执行写操作，并判断是否为写穿模式，如果为写穿模式则也将请求提交到后台设备上执行写操作，如果没有找到数据块，则将请求提交到后台设备上执行写操作，并根据操作是否可以被缓存以及数据块的热度决定是否要替换缓存块执行对应的缓存块操作。
+首先判断请求是否为可以被缓存的请求，判断的依据是判断进程是否在黑名单中以及依据参数的设置决定是否要缓存顺序请求，如果不能被缓存则直接提交到后台设备执行读操作，如果可以被缓存，则首先在缓存设备中查找数据块，如果找到对应数据块，则将请求提交到缓存上执行读操作，如果没有找到数据块，则将请求提交到后台设备上执行读操作，并根据操作是否可以被缓存以及数据块的热度决定是否要替换缓存块执行对应的缓存块操作。
 
-\begin{figure}[H]
+
+对于写请求的处理如图\ref{fig:qscache_map_write}所示。
+
+
+\begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.8\textwidth]{qscache_map_write.pdf}
+    \includegraphics[width=\textwidth]{qscache_map_write.pdf}
     \bicaption[fig:qscache_map_write]{qscache的map接口写请求处理}{qscache的map接口写请求处理}{Fig.}{process of qscache map write}
 \end{figure}
 
-\subsubsection{基于request模式的实现}
+首先判断请求是否为可以被缓存的请求，判断的依据是判断进程是否在黑名单中以及依据参数的设置决定是否要缓存顺序请求，如果不能被缓存则直接提交到后台设备执行写操作，如果可以被缓存，则首先在缓存设备中查找数据块，如果找到对应数据块，则将请求提交到缓存上执行写操作，并判断是否为写穿模式，如果为写穿模式则也将请求提交到后台设备上执行写操作，如果没有找到数据块，则将请求提交到后台设备上执行写操作，并根据操作是否可以被缓存以及数据块的热度决定是否要替换缓存块执行对应的缓存块操作。
+
+
+\subsection{基于request模式的实现}
 
 本研究发现现有的Device Mapper的实现中，仅有multipath\_target是基于request的target\_type，而在multipath\_target中map\_rq的实现multipath\_map仅仅是改变request队列然后返回DM\_MAPIO\_REMAPPED，而混合存储系统中map\_rq必须负责将对mapped device的请求映射到低层的设备因此不能仅仅像multipath\_target中map\_rq的实现一样简单。因此需要实现一个新的接口。在target\_type中添加make\_rq接口实现用bio生成request，然后依靠map\_rq将请求映射到不同的低层设备。
 
 对Linux的内核作出的具体修改如下：
 
-\begin{enumerate}
+\begin{enumerate}[leftmargin=0pt, itemindent=39pt]
     \item include/linux/dm-io.h文件对dm\_io\_request结构体添加三个变量，submit\_bio用以表示是否直接提交bio，start和end为两个bio指针，指向该dm\_io\_request的起始bio和终止bio。
     \item drivers/md/dm-io.c文件，do\_region改为接收dm\_io\_request类型参数，依据dm\_io\_request类型的参数中submit\_bio的设置判断是直接提交bio还是放入request中。dispatch\_io改为接收dm\_io\_request类型参数，相关操作包括对do\_region的调用相应改为基于dm\_io\_request类型的操作。sync\_io改为接收dm\_io\_request类型参数，相关操作包括对dispatch\_io的调用相应改为基于dm\_io\_request类型的操作。async\_io改为接收dm\_io\_request类型参数，相关操作包括对dispatch\_io的调用相应改为基于dm\_io\_request类型的操作。dm\_io中对sync\_io和async\_io的调用都改为传递dm\_io\_request类型参数。
     \item include/linux/device-mapper.h文件中对target\_type结构体添加函数指针make\_rq作为新的新接口，用以支持自己对request的生成。
@@ -163,6 +161,7 @@ iterate\_devices接口负责遍历系统所管理的缓存设备和后台设备�
     \begin{figure}[!htbp]
         \centering
         \includegraphics[width=\textwidth]{dm_request.pdf}
+
         \bicaption[fig:dm_request]{dm\_request处理流程}{dm\_request处理流程}{Fig.}{dm\_request process}
     \end{figure}
 
@@ -173,34 +172,37 @@ iterate\_devices接口负责遍历系统所管理的缓存设备和后台设备�
     \item drivers/md/dm-snap-persistent.c文件，chunk\_io中初始化io\_req时设置submit\_bio为1，默认直接提交bio。
 \end{enumerate}
 
-在对Linux内核修改完毕后，现在的Device Mapper中target\_type支持开发者实现自己的make\_rq接口。qscache系统通过实现make\_rq和map\_rq接口实现基于request的混合存储系统，具体流程如图\ref{fig:request_process}所示。make\_rq()负责用bio生成对应的request而map\_rq()负责将对混合存储系统的请求分派到具体的实际设备执行操作。
+在对Linux内核修改完毕后，现在的Device Mapper中target\_type支持开发者实现自己的make\_rq接口。qscache系统通过实现make\_rq和map\_rq接口实现基于request的混合存储系统，具体流程如图\ref{fig:request_process}所示。make\_rq()负责用bio生成对应的request，生成的request被放入队列中，通过I/O调度器进行调度以调节IOPS，之后由map\_rq()负责将对混合存储系统的请求分派到具体的实际设备执行操作。
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.9\textwidth]{request_process.pdf}
 
-    \vskip -1cm
+    %\vskip -1cm
 
     \bicaption[fig:request_process]{基于request的请求流程}{基于request的请求流程}{Fig.}{request process in request-based system}
 \end{figure}
 
-具体地说，make\_rq()接收对系统的bio请求，然后根据bio判断对系统的具体操作，然后去调用对应操作的函数并传入参数设置不立即提交bio，各操作函数经过递归调用最后都会落到dm\_io\_async\_bvec()中，如图\ref{fig:dm_io_async_bvec}所示，make\_rq()不论是调用不经缓存的操作，还是缓存命中或未命中的读写操作最终都会调用dm\_io\_async\_bvec()，并在make\_rq()中将是否立即提交bio的参数一路传给dm\_io\_async\_bvec()。
+具体地说，make\_rq()接收对系统的bio请求，然后根据bio判断对系统的具体操作，然后去调用对应操作的函数并传入参数设置不立即提交bio，各操作函数经过递归调用最后都会落到dm\_io\_async\_bvec()中，如图\ref{fig:call_dm_io_async_bvec}所示，make\_rq()不论是调用不经缓存的操作，还是缓存命中或未命中的读写操作最终都会调用dm\_io\_async\_bvec()，并在make\_rq()中将是否立即提交bio的参数一路传给dm\_io\_async\_bvec()。
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{call_dm_io_async_bvec.pdf}
+
+    \vskip -0.5cm
+
     \bicaption[fig:call_dm_io_async_bvec]{dm\_io\_async\_bvec()调用流程}{dm\_io\_async\_bvec()调用流程}{Fig.}{call of dm\_io\_async\_bvec()}
 \end{figure}
 
 dm\_io\_async\_bvec()的处理流程如图\ref{fig:process_dm_io_async_bvec}所示，dm\_io\_async\_bvec()根据传入的参数生成dm\_io\_request并调用dm\_io()，对于立即提交的bio，dm\_io\_async\_bvec()结束调用后就立刻返回，对于不是立即提交的bio，再dm\_io()中会设置整个bio的开始与结束，然后返回dm\_io\_async\_bvec()通过开始与结束遍历这些bio，然后用这些bio各自或生成一个request放入队列中。
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
     \centering
-    \includegraphics[width=\textwidth]{process_dm_io_async_bvec.pdf}
+    \includegraphics[width=0.7\textwidth]{process_dm_io_async_bvec.pdf}
     \bicaption[fig:process_dm_io_async_bvec]{dm\_io\_async\_bvec()处理流程}{dm\_io\_async\_bvec()处理流程}{Fig.}{process of dm\_io\_async\_bvec()}
 \end{figure}
 
-\subsection{系统信息组织与管理的实现}
+\section{系统信息组织与管理的实现}
 
 qscache系统的系统信息由数据结构cache\_c进行统一管理，该结构为一全局变量。cache\_c中的主要成员类型及其作用如表\ref{tab:cache_c}所示。其他诸如黑名单、白名单也在cache\_c中。相关冷热数据识别要用到的数据结构，则以set为单位存放在cache\_sets这一结构体中。
 
@@ -232,11 +234,11 @@ qscache系统的系统信息由数据结构cache\_c进行统一管理，该结�
     \end{tabular}
 \end{table}
 
-\subsection{冷热数据识别算法的实现}
+\section{冷热数据识别算法的实现}
 
 在qscache系统中采用双层LRU链表，具体思想见\ref{sec:data_hot_identification}。系统为每个set建立两个LRU链表，在管理cache的cache\_sets结构体中使用四个变量hotlist\_lru\_head，hotlist\_lru\_tail，warmlist\_lru\_head，warmlist\_lru\_tail描述这两个链表。对于链表中数据的移动只需要更改对应的指针即可。对于后台设备的数据块访问，将该数据块放到warmlist的尾端，当对该数据块的访问达到一定阈值时，将其移到hotlist的尾端，当要发生缓存块替换时，从warmlist的尾端移出数据块，并把hotlist的尾端放入warmlist中。
 
-\subsection{多缓存设备对多后台设备的实现}
+\section{多缓存设备对多后台设备的实现}
 
 在\ref{sec:multi-cache_to_multi-backend}中提到qscache系统采用分层管理结构，将多设备的管理与混合存储系统隔离开。qscache系统对多缓存设备对多后台设备的实现基于LVM。将以多缓存设备与多后台设备创建混合存储系统封装成用户态的工具，使之对用户透明，首先接收用户提供的缓存设备信息、后台设备信息、系统参数，然后依据参数先将多个SSD映射为一个虚拟缓存设备，再将多个HDD映射为一个虚拟后台设备，最后将这两个设备的信息连同混合存储系统的配置参数发给dmsetup命令，dmsetup将参数传给系统在内核的初始化函数进行混合存储系统的构建。系统的销毁同样封装为对用户透明的用户态工具，首先调用系统在内核的注销函数销毁混合存储系统，然后清理在虚拟缓存设备上残留的数据，之后将虚拟缓存设备卸载解除与多个SSD的映射关系，再将虚拟后台设备卸载解除与多个HDD的映射关系。
 
