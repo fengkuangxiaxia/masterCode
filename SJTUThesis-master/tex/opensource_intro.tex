@@ -13,7 +13,7 @@
 
 \subsection{系统架构}
 
-flashcache基于device mapper，采用分层架构，缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
+flashcache基于device mapper，采用分层架构，将缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
 
 \subsection{数据映射策略}
 \label{sec:flashcache_mapping}
@@ -46,7 +46,7 @@ flashcache采用静态策略，并且限制缓存设备与后台设备都只能�
 
 \subsection{系统架构}
 
-dm-cache基于device mapper，采用分层架构，缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
+dm-cache基于device mapper，采用分层架构，将缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
 
 \subsection{数据映射策略}
 
@@ -68,7 +68,7 @@ dm-cache采用静态策略，并且限制缓存设备与后台设备都只能有
 
 \subsection{系统架构}
 
-bcache采用分层架构，缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
+bcache没有采用device mapper而是自己实现了一套系统，采用分层架构，将缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
 
 \subsection{数据映射策略}
 
@@ -137,6 +137,7 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 测试环境如表\ref{tab:test_environment}所示
 
 \begin{table}[H]
+    \zihao{5}
     \centering
     \bicaption[tab:test_environment]{flashcache、dm-cache、bcache读写性能测试环境}{flashcache、dm-cache、bcache读写性能测试环境}{Table}{test environment of flashcache, dm-cache and bcache}
     \begin{tabular}{cc} \toprule
@@ -152,6 +153,7 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 表\ref{tab:standard_test}为对被用作缓存设备的SSD进行的基准测试，以与后续测试进行对比，可以发现当使用XFS文件系统时性能有所下降，这是由于文件系统相比裸盘多了元数据的修改操作。
 
 \begin{table}[H]
+    \zihao{5}
     \centering
     \bicaption[tab:standard_test]{基准测试}{基准测试}{Table}{standard test}
     \begin{tabular}{cccc} 
@@ -169,6 +171,7 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 表\ref{tab:flashcache_test}为使用flashcache的测试，由于flashcache只严格缓存缓存块大小边界对齐的数据，由于XFS文件系统默认块大小为4K，大于这个大小的IO文件系统的边界和块设备的边界未必对齐，所以在flashcache中不会被缓存，因此缓存块32k IO块32K XFS条件下的性能接近磁盘的性能。 
 
 \begin{table}[H]
+    \zihao{5}
     \centering
     \bicaption[tab:flashcache_test]{flashcache测试}{flashcache测试}{Table}{flashcache test}
     \begin{tabular}{cccc} 
@@ -186,6 +189,7 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 表\ref{tab:dm-cache_test}为使用dm-cache的测试。dm-cache的缓存块大小范围设置为32KB-1GB，可以发现dm-cache框架下使用XFS文件系统比使用裸盘的性能高，这是由于dm-cache采用了smq算法，而XFS文件系统的数据组织结构导致了这一结果。 
 
 \begin{table}[H]
+    \zihao{5}
     \centering
     \bicaption[tab:dm-cache_test]{dm-cache测试}{dm-cache测试}{Table}{dm-cache test}
     \begin{tabular}{cccc} 
@@ -203,6 +207,7 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 表\ref{tab:bcache_test}为使用bcache的测试。由于bcache没有缓存块的概念，可以缓存任意长度的I/O对象，因此在小IO时表现优异。
 
 \begin{table}[H]
+    \zihao{5}
     \centering
     \bicaption[tab:bcache_test]{bcache测试}{bcache测试}{Table}{bcache test}
     \begin{tabular}{cccc} 

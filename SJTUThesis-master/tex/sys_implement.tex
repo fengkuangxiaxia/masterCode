@@ -17,7 +17,7 @@
 
 Linux存储层次如图\ref{fig:linux_storage_layer}所示，大致可分为共六层\cite{敖青云2011存储技术原理分析}：
 
-\begin{enumerate}[leftmargin=0pt, itemindent=39pt]
+\begin{enumerate}[wide]
     \item 最上层位于用户态，对用户看到的文件，用户通过调用POSIX接口对这些文件进行操作。
 
     \item 第二层为虚拟文件系统(VFS, virtual file system)层，位于内核态。VFS的作用为屏蔽其所管理的具体文件系统，使用户可以使用统一的接口进行调用。POSIX在VFS层将数据封装成bio，然后将bio交给挂载的具体文件系统执行操作，bio将在\ref{sec:bio}具体介绍。
@@ -74,6 +74,7 @@ mapped device基于request还是基于bio的主要区别在于，如果是基于
 qscache系统基于Linux的Device Mapper实现，通过研究Linux内核中Device Mapper的相关代码，本研究发现Device Mapper中使用target\_type这一结构体用来管理对mapped device的各种操作，target\_type的主要成员类型及作用见表\ref{tab:target_type}。因此需要定义qscache对应的target\_type，使qscache系统可以通过Device Mapper组织管理不同设备。
 
 \begin{table}[!htbp]
+    \zihao{5}
     \centering
     \bicaption[tab:target_type]{target\_type的主要成员类型及作用}{target\_type的主要成员类型及作用}{Table}{structure of target\_type}
     \begin{tabular}{ccc} 
@@ -152,7 +153,7 @@ iterate\_devices接口负责遍历系统所管理的缓存设备和后台设备�
 
 对Linux的内核作出的具体修改如下：
 
-\begin{enumerate}[leftmargin=0pt, itemindent=39pt]
+\begin{enumerate}[wide]
     \item include/linux/dm-io.h文件对dm\_io\_request结构体添加三个变量，submit\_bio用以表示是否直接提交bio，start和end为两个bio指针，指向该dm\_io\_request的起始bio和终止bio。
     \item drivers/md/dm-io.c文件，do\_region改为接收dm\_io\_request类型参数，依据dm\_io\_request类型的参数中submit\_bio的设置判断是直接提交bio还是放入request中。dispatch\_io改为接收dm\_io\_request类型参数，相关操作包括对do\_region的调用相应改为基于dm\_io\_request类型的操作。sync\_io改为接收dm\_io\_request类型参数，相关操作包括对dispatch\_io的调用相应改为基于dm\_io\_request类型的操作。async\_io改为接收dm\_io\_request类型参数，相关操作包括对dispatch\_io的调用相应改为基于dm\_io\_request类型的操作。dm\_io中对sync\_io和async\_io的调用都改为传递dm\_io\_request类型参数。
     \item include/linux/device-mapper.h文件中对target\_type结构体添加函数指针make\_rq作为新的新接口，用以支持自己对request的生成。
@@ -183,22 +184,25 @@ iterate\_devices接口负责遍历系统所管理的缓存设备和后台设备�
     \bicaption[fig:request_process]{基于request的请求流程}{基于request的请求流程}{Fig.}{request process in request-based system}
 \end{figure}
 
-具体地说，make\_rq()接收对系统的bio请求，然后根据bio判断对系统的具体操作，然后去调用对应操作的函数并传入参数设置不立即提交bio，各操作函数经过递归调用最后都会落到dm\_io\_async\_bvec()中，如图\ref{fig:call_dm_io_async_bvec}所示，make\_rq()不论是调用不经缓存的操作，还是缓存命中或未命中的读写操作最终都会调用dm\_io\_async\_bvec()，并在make\_rq()中将是否立即提交bio的参数一路传给dm\_io\_async\_bvec()。
+具体地说，make\_rq()接收对系统的bio请求，之后根据bio判断对系统的具体操作，然后去调用对应操作的函数并传入参数设置不立即提交bio，各操作函数经过递归调用最后都会落到dm\_io\_async\_bvec()中，如图\ref{fig:call_dm_io_async_bvec}所示，make\_rq()首先根据函数判断请求是否是属于顺序读写的一部分，如果属于顺序读写请求且用户设置不缓存顺序读写请求，则将请求交由uncached\_io()处理，如果是可以被缓存的请求，则根据请求的读写类别，分别交由read()或write()操作，在read()和write()中，依据要操作的数据块的标志位，如果是VALID，即表示该数据块在缓存中命中，则对应地调用read\_hit()或write\_hit()，否则调用read\_miss()或write\_miss()，但最终在各调用中都会调用dm\_io\_async\_bvec()，并在make\_rq()中将是否立即提交bio的参数经调用路径传给dm\_io\_async\_bvec()。
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=\textwidth]{call_dm_io_async_bvec.pdf}
 
-    \vskip -0.5cm
+    \vskip -1cm
 
     \bicaption[fig:call_dm_io_async_bvec]{dm\_io\_async\_bvec()调用流程}{dm\_io\_async\_bvec()调用流程}{Fig.}{call of dm\_io\_async\_bvec()}
 \end{figure}
 
 dm\_io\_async\_bvec()的处理流程如图\ref{fig:process_dm_io_async_bvec}所示，dm\_io\_async\_bvec()根据传入的参数生成dm\_io\_request并调用dm\_io()，对于立即提交的bio，dm\_io\_async\_bvec()结束调用后就立刻返回，对于不是立即提交的bio，再dm\_io()中会设置整个bio的开始与结束，然后返回dm\_io\_async\_bvec()通过开始与结束遍历这些bio，然后用这些bio各自或生成一个request放入队列中。
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{process_dm_io_async_bvec.pdf}
+
+    \vskip -1cm
+
     \bicaption[fig:process_dm_io_async_bvec]{dm\_io\_async\_bvec()处理流程}{dm\_io\_async\_bvec()处理流程}{Fig.}{process of dm\_io\_async\_bvec()}
 \end{figure}
 
@@ -207,6 +211,7 @@ dm\_io\_async\_bvec()的处理流程如图\ref{fig:process_dm_io_async_bvec}所�
 qscache系统的系统信息由数据结构cache\_c进行统一管理，该结构为一全局变量。cache\_c中的主要成员类型及其作用如表\ref{tab:cache_c}所示。其他诸如黑名单、白名单也在cache\_c中。相关冷热数据识别要用到的数据结构，则以set为单位存放在cache\_sets这一结构体中。
 
 \begin{table}[!htbp]
+    \zihao{5}
     \centering
     \bicaption[tab:cache_c]{cache\_c的主要成员类型及作用}{cache\_c的主要成员类型及作用}{Table}{structure of cache\_c}
     \begin{tabular}{ccc} 
