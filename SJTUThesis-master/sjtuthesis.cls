@@ -449,6 +449,16 @@
   \cleardoublepage
 }
 
+\renewcommand{\headrule}{%定义首页页眉线绘制命令，这里为等宽双线
+%\makebox[0pt][l]{\rule[0.55\baselineskip]{\headwidth}{2.25pt}}%
+%\rule[0.7\baselineskip]{\headwidth}{0.4pt}
+
+\hrule\@height 2.25pt \@width\headwidth\vskip1pt%上面线为1pt粗
+\hrule\@height 0.5pt\@width\headwidth  %下面0.5pt粗
+\vskip-2\headrulewidth\vskip-1pt      %两条线的距离1pt
+\vspace{1cm}
+}
+
 % fancyhdr页眉页脚设置
 \ifsjtu@bachelor
 	% 本科学位论文页眉页脚设置
@@ -481,40 +491,36 @@
 	\if@twoside
 	  %% 正文页眉页脚
 	  \fancypagestyle{main}{
-	    %\fancyhead[LO, RE]{\small\kaishu\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
-	    %\fancyhead[RO]{\nouppercase{\small\kaishu\leftmark}}
-      %\fancyhead[LE]{\nouppercase{\small\kaishu\sjtu@value@titlemark}}
       \fancyhead[L]{}
       \fancyhead[R]{}
-      \fancyhead[CO]{\songti\zihao{-5}\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
-      \fancyhead[CE]{\nouppercase{\songti\zihao{-5}\leftmark}}
-	    \fancyfoot[C]{\small ---~{\bfseries\thepage}~---}
+      \fancyhead[C]{\songti\zihao{-5}\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
+      \fancyfoot[C]{\small ---~{\bfseries\thepage}~---}
+      %\renewcommand\headrule{\vskip-1.7\headheight\hrulefill\vskip2pt\hrulefill}
 	    \renewcommand{\headheight}{32pt}
 	  }
 	  %% 开章页页眉页脚
 	  \fancypagestyle{plain}{
 	    \fancyhf{}
-	    %\fancyhead[LO,RE]{\nouppercase{\small\kaishu\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}}
-	    %\fancyhead[RO]{\nouppercase{\small\kaishu\leftmark}}
-      %\fancyhead[LE]{\nouppercase{\small\kaishu\sjtu@value@titlemark}}
       \fancyhead[L]{}
       \fancyhead[R]{}
-      \fancyhead[C]{\nouppercase{\songti\zihao{-5}\leftmark}}
+      \fancyhead[C]{\songti\zihao{-5}\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
 	    \fancyfoot[C]{\small ---~{\bf\thepage}~---}
 	    \renewcommand{\headheight}{32pt}
 	  }
 	\else
 	%% 正文页
 	\fancypagestyle{main}{
-	  \fancyhead[L]{\small\kaishu\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
-	  \fancyhead[R]{\nouppercase{\small\kaishu\leftmark}}
+	  \fancyhead[L]{}
+    \fancyhead[R]{}
+    \fancyhead[C]{\songti\zihao{-5}\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
 	  \fancyfoot[C]{\small ---~{\bf\thepage}~---}
 	  \renewcommand{\headheight}{32pt}
 	}
 	\fancypagestyle{plain}{
 	  \fancyhf{}
-	  \fancyhead[L]{\nouppercase{\small\kaishu\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}}
-	  \fancyhead[R]{\nouppercase{\small\kaishu\leftmark}}
+	  \fancyhead[L]{}
+    \fancyhead[R]{}
+    \fancyhead[C]{\songti\zihao{-5}\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
 	  % \fancyhead[L]{\small {\it\sjtu@value@titlemark}}
 	  \fancyfoot[C]{\small ---~{\bf\thepage}~---}
 	  \renewcommand{\headheight}{32pt}
@@ -526,12 +532,12 @@
 \newenvironment{abstract}{\cleardoublepage %\pdfbookmark[0]{\sjtu@label@abstract}{abstract}
 \chapter*{\sjtu@value@title\vskip 20pt\sjtu@label@abstract}
 \addcontentsline{toc}{chapter}{\sjtu@label@abstract}
-\markboth{\sjtu@label@abstract}{}}{}
+\markboth{\sjtu@label@abstract}{}\zihao{4}}{}
 \newcommand\keywords[1]{\vspace{2ex}\noindent{\bf\large \sjtu@label@keywords} #1}
 \newenvironment{englishabstract}{\cleardoublepage%\pdfbookmark[0]{\sjtu@label@englishabstract}{englishabstract}
 \chapter*{\sjtu@value@englishtitle\vskip 20pt\bfseries \sjtu@label@englishabstract}
 \addcontentsline{toc}{chapter}{\sjtu@label@englishabstract}
-\markboth{\sjtu@label@englishabstract}{}}{}
+\markboth{\sjtu@label@englishabstract}{}\zihao{4}}{}
 \newcommand\englishkeywords[1]{\vspace{2ex}\noindent{\bf\large \sjtu@label@englishkeywords} #1}
 
 \renewcommand\tableofcontents{%

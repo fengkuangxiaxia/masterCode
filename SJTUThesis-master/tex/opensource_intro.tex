@@ -7,7 +7,7 @@
 \chapter{开源混合存储系统分析}
 \label{chap:opensource_intro}
 
-目前，开源的混合存储系统中被使用较为广泛的是flashcache、dm-cache、bcache这三个系统，但是对于这三个系统的研究主要集中在对他们的算法研究\cite{杨宗2013flashcache, 唐华敏2015bcache}，而对他们的对比分析比较少。本章将首先对flashcache、dm-cache、bcache这三个开源混合存储系统分别从系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合进行介绍，然后对他们从性能和特性两方面进行对比分析。
+目前，开源的混合存储系统中被使用较为广泛的是flashcache、dm-cache、bcache这三个系统，但是对于这三个系统的研究主要集中在对他们的算法研究\cite{杨宗2013flashcache, 唐华敏2015bcache}，而对他们的对比分析比较少。本章将首先对flashcache、dm-cache、bcache这三个开源混合存储系统分别从系统架构、数据映射策略、冷热数据识别算法、数据写回/迁移策略、最优化存储设备组合进行介绍，然后对他们从性能和特性两方面进行对比分析。
 
 \section{flashcache}
 
@@ -30,7 +30,7 @@ flashcache采用块级映射策略中的组关联映射规则，通过set associ
     \bicaption[fig:flashcache_map]{flashcache的组相联映射}{flashcache的组相联映射}{Fig.}{group mapping in flashcache}
 \end{figure}
 
-\subsection{冷热数据识别策略}
+\subsection{冷热数据识别算法}
 
 flashcache以块级对数据进行冷热识别，采用双层lru链表结构将数据分为频繁访问的数据、偶尔访问的数据以及冷数据，如此一来，大量的遍历型I/O请求并不会导致大量的缓存失效，并且flashcache支持识别顺序性读写请求并略过对顺序性读写请求中数据的缓存操作。
 
@@ -52,7 +52,7 @@ dm-cache基于Device Mapper，并且已进入Linux内核主线，因此与Linux�
 
 dm-cache采用Extent级映射策略，将缓存设备分成大小固定的缓存块（缓存块大小为32KB的整数倍），缓存块通过hash表组织避免了set associative hash的利用率低和冲突问题。
 
-\subsection{冷热数据识别策略}
+\subsection{冷热数据识别算法}
 
 dm-cache最初使用multi queue对冷热数据进行管理与识别，最新的则是对multi queue进行优化，使用smq(stochastic multi queue，随机多队列模式)对缓存块进行管理。smq本质就是一个多层lru算法，最多可以有64层，层数代表数据的冷热程度不同。smq并不记录缓存块的命中数，并根据命中数记录在不同层，因为这样会导致命中数越是高的层记录的缓存块越少而命中数越少的层记录的缓存块越多，最终导致层与层之间不平衡。smq在缓存块命中时将该缓存块与它上层中最近最少使用的缓存块进行交换，达到不同层平衡的效果。
 
@@ -74,7 +74,7 @@ bcache没有采用Device Mapper而是自己实现了一套系统，采用分层�
 
 bcache采用Extent级映射策略，将缓存设备分成大小固定的bucket（默认512KB），bucket内部空间采用追加分配的方式，记录当前的偏移量，下次分配时从当前偏移量继续向后分配，数据映射到bucket时主要有2个考量：优先将连续的数据映射到同一个bucket中即使他们可能来源于不同进程的I/O操作；优先将同一进程操作的数据映射到同一bucket中。bucket通过B+树进行管理，每个树节点内部为4个bset结构，每个bset存有排好序的bkey。
 
-\subsection{冷热数据识别策略}
+\subsection{冷热数据识别算法}
 
 bcache在每个bucket中记录16位长的优先级，每次bucket命中，优先级加一，同时所有bucket的优先级周期性减少，bcache通过bucket的优先级实现lru算法进行冷热数据的识别。
 
@@ -254,4 +254,4 @@ bcache在有脏数据情况下，突然重启系统(强行物理关机)，重启
 
 \section{本章小结}
 
-本章从上章提到的混合存储系统设计中系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合这五个方面对现有三个开源混合存储系统flashcache、dm-cache、bcache进行了分析，并且经过测试给出了flashcache、dm-cache、bcache的特性对比以及性能对比。从特性对比来看flashcache在可靠性方面优于另两者，bcache在内存消耗方面有较大不足。从性能测试来看flashcache的缓存要求非常严格，必须设备边界对齐且长度一致才能被缓存，dm-cache和bcache则没这个限制。在I/O块4k时bcache表现优异，但是在大I/O块时表现不如flashcache和dm-cache。当缓存命中率接近100\%时，flashcache性能要略优于dm-cache。
+本章从上章提到的混合存储系统设计中系统架构、数据映射策略、冷热数据识别算法、数据写回/迁移策略、最优化存储设备组合这五个方面对现有三个开源混合存储系统flashcache、dm-cache、bcache进行了分析，并且经过测试给出了flashcache、dm-cache、bcache的特性对比以及性能对比。从特性对比来看flashcache在可靠性方面优于另两者，bcache在内存消耗方面有较大不足。从性能测试来看flashcache的缓存要求非常严格，必须设备边界对齐且长度一致才能被缓存，dm-cache和bcache则没这个限制。在I/O块4k时bcache表现优异，但是在大I/O块时表现不如flashcache和dm-cache。当缓存命中率接近100\%时，flashcache性能要略优于dm-cache。

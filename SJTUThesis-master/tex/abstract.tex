@@ -5,41 +5,41 @@
 
 \begin{abstract}
 
-随着云计算与大数据的快速发展，对作为其基石的存储系统的要求越来越高，存储系统需要具备大容量、低成本、高性能。而目前主流的任何一种存储设备如固态盘、磁盘由于各种限制不能单独构建出同时满足上述要求的存储系统。混合存储系统充分利用不同存储设备特性的互补构建高效的存储系统，使得在保证成本不大幅上升的前提下能支持提供大容量同时具有高性能，因此混合存储系统是当前的研究热点。 
+随着云计算与大数据的快速发展，对作为其基石的存储系统提出了越来越高的要求，存储系统不仅需要具备大容量、高性能，还要满足低成本要求。而单独使用目前主流的任一种存储设备如固态盘、磁盘都不能设计出同时满足上述要求的存储系统。混合存储系统充分利用不同存储设备的互补性设计高效的存储系统，使得在保证成本不大幅上升的前提下能支持提供大容量同时具有高性能，成为当前的研究热点和发展方向。 
 
-本文首先介绍了混合存储系统的基本概念并对目前主流存储设备进行了比较，然后对依据所依赖的存储设备所区分的几种不同的混合存储系统模式进行了研究分析。之后对混合存储系统在设计中所涉及的关键技术进行了归纳分析。然后从这些关键技术的角度对三个开源混合存储系统进行了分析，并对他们的特性以及性能进行了对比分析。在此基础上设计并实现了基于SSD和HDD的SSD缓存系统qscache，本文主要的工作如下：
+本文对混合存储系统所涉及的关键技术进行了深入研究，并实现了基于SSD和HDD的SSD缓存系统qscache，本文主要的工作如下：
 
 \begin{enumerate}[wide]
-    \item 对当前主流的存储设备进行研究，并对这些存储设备的顺序读写性能、随机读写性能、成本、容量进行了分析比较。
-    \item 对混合存储系统的不同模式进行了研究并分析总结了混合存储系统在设计中的关键技术。
-    \item 对三个开源混合存储系统从系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合的角度进行了研究，分析对比了它们的随机读写性能与顺序读写性能以及他们的可靠性、系统额外开销等特性。
-    \item 设计并实现了qscache系统，包括系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合等。
-    \item 对Linux内核的Device Mapper框架的源代码进行修改，使Device Mapper框架支持开发者主动将bio生成为request，在此基础上实现了qscache系统基于bio和基于request两种模式，使用户能在基于request模式下依据权限分配不同进程的IOPS。
-    \item 对qscache系统的顺序读写性能以及随机读写性能进行了测试并与基于HDD的系统以及开源混合存储flashcache进行了对比分析，另外对qscache系统的多缓存设备对多后台设备功能和对I/O带宽按权限分配的功能进行了测试。
+    \item 对当前主流的存储设备的性能、成本、容量进行了比较。
+    \item 对混合存储系统的关键技术，包括系统架构、数据映射策略、冷热数据识别算法、数据写回/迁移策略、最优化存储设备组合进行了深入研究。
+    \item 对业界三个主流的开源混合存储系统进行了研究，比较分析了它们的性能与特性。
+    \item 设计并实现了qscache系统在Linux内核态运行的qscache系统，支持SSD设备和HDD设备之间的灵活映射。
+    \item 对Linux内核的Device Mapper框架源代码进行修改，增加新接口，在新接口的基础上实现了qscache系统面向进程的I/O带宽按权限分配。
+    \item 对qscache系统的功能与性能进行了测试，并对实验结果进行讨论分析。
 \end{enumerate}
 
-测试结果显示qscache系统不论是基于bio模式还是基于request模式顺序读写性能都与flashcache接近，基于bio的qscache系统在随机读写方面性能与flashcache接近但基于request的qscache系统的随机读写性能随I/O块的增大性能急剧下降。另外测试结果显示对I/O带宽按权限分配的功能以及多缓存设备对多后台设备功能成功实现。本论文通过Linux内核模块实现，并且涉及对Linux内核进行修改，因此本论文的研究成果对其它的混合存储系统设计与实现以及需要对Linux中Device Mapper进行功能扩展与修改的研究具有较好的借鉴价值。
+测试结果显示qscache系统的整体性能与flashcache接近，并且能够实现多块SSD设备与多块HDD设备之间的映射，对Linux内核的修改新增的接口能够支持qscache系统以基于request的模式运行，在此基础上支持对I/O带宽按权限分配的功能，本论文的研究成果对于其它的混合存储系统设计与实现具有较好的借鉴价值。
 
 \keywords{\large 固态盘 \quad 磁盘 \quad 分层 \quad 缓存}
 \end{abstract}
 
 \begin{englishabstract}
 
-With the rapid development of cloud computing and big data, the storage system, which is the cornerstone, needs to provide high storage capacity and high performance at low cost. While at present any one of the storage devices, such as solid state disk and hard disk drive, can not meet the above requirements alone due to various limitations. Hybrid storage system takes full advantage of the characteristics of different storage device to support large-capacity, but also ensures high performance without too much extra cost. Therefore, hybrid storage system is the current research focus. 
+With the rapid development of cloud computing and big data, the storage system, which is the cornerstone, needs to provide high storage capacity and high performance at low cost. While at present any one of the storage devices, such as solid state disk and hard disk drive, can not meet the above requirements alone. Hybrid storage system takes full advantage of the characteristics of different storage device to support large-capacity, but also ensures high performance without too much extra cost. Therefore, hybrid storage system is becoming current research focus and research direction. 
 
-This paper introduced the basic concepts of hybrid storage systems and studies the current wide-used storage devices first. Then, several different hybrid storage system modes that are distinguished by the based storage devices were studied. After that, the key technologies in the design of hybrid storage system were studied and summarized. Then from the perspective of these key technologies, three open source hybrid storage systems were analyzed, and their characteristics and performance were compared. Based on this, the SSD cache system based on SSD and HDD, qscache was designed and implemented. The main work of this paper is as follows:
+This paper conducted in-depth research on the key technologies in hybrid storage system. Then the SSD cache system based on SSD and HDD, qscache was designed and implemented. The main work of this paper is as follows:
 
 
 \begin{enumerate}[wide]
-    \item The current wide-used storage devices are introduced, and their sequential I/O performance, random I/O performance, cost, capacity were analyzed and compared.
-    \item Several different hybrid storage systems modes were studied and the key technologies in the design of hybrid storage systems were summarized.
-    \item From the perspective of system architecture, data mapping strategy, hot data identification strategy, data write back/migration strategy, optimal combination of storage devices, three open source hybrid storage systems were studied, and their sequential I/O performance, random I/O performance and characteristics like reliability, system overhead were analyzed and compared.
-    \item The design and implementation of hybrid storage system qscache including system architecture, data mapping strategy, hot data identification strategy, data write back/migration strategy, optimal combination of storage devices.
-    \item The source code of Device Mapper framework in Linux kernel was modified so that Device Mapper framework can support using bio to generate request. Based on this, the qscache system both supports the bio-based mode and the request-based mode, in which mode assigning IOPS for different processes based on weight is supported.
-    \item The sequential I/O performance and random I/O performance of the qscache system, as well as the ability of supporting multiple cache devices to multiple backend devices and the support of assigning I?O bandwidth based on weight, was tested.
+    \item The performance, cost and capacity of current wide-used storage devices were analyzed and compared.
+    \item Several key technologies including system architecture, data mapping strategy, hot data identification strategy, data write back/migration strategy, optimal combination of storage devices in  hybrid storage systems were studied deeply.
+    \item Three widely-used open source hybrid storage systems were studied, and their performance and characteristics were analyzed and compared.
+    \item The design and implementation of hybrid storage system qscache including the support of flexible mapping from SSD to HDD.
+    \item The source code of Device Mapper framework in Linux kernel was modified to support a new interface, based on which, the qscache system supports assigning IOPS for different processes based on weight.
+    \item The performance of the qscache system was tested, and the results were analyzed.
 \end{enumerate}
 
-The test results shows that the sequential I/O performance of both bio-based qscache system and request-based qscache system is close to flashcache. And the bio-based qscache system has close random I/O performance to flashcache, while the random I/O performance of the request-based qscache system drops sharply with the increasing of the size of I/O block. The test results also shows that the function of assigning I/O bandwidth according to the weight of processes and the multi-cache device to multi-background device function were implemented. The qscache system is implemented as a kernel module in Linux, and the modification of Linux kernel was included. So this research provides a reference for the design and implementation of other hybrid storage systems and the modification of the Device Mapper in Linux kernel.
+The test results shows that the performance of qscache system was close to flashcache, and mapping between several SSDs and HDDs was implemented. The modification of Linux kernel supports the request-based mode qsc  system, based on which assigning IOPS for different processes based on weight was supported. This research provides a reference for the design and implementation of other hybrid storage systems.
 
 \englishkeywords{\large  solid state disk, hard disk drive, multi-layer, cache}
 \end{englishabstract}
