@@ -5,12 +5,12 @@
 
 \begin{abstract}
 
-随着云计算与大数据的快速发展，对作为其基石的存储系统的要求越来越高，存储系统需要具备大容量、低成本、高性能。而目前主流的任何一种存储设备如固态盘、磁盘由于各种限制不能单独构建出同时满足上述要求的存储系统。混合存储系统充分利用不同存储设备特性的互补构建高效的存储系统，使得在保证成本不大幅上升的前提下能支持提供大容量同时具有高性能，因此混合存储系统成为当前研究的热点。 
+随着云计算与大数据的快速发展，对作为其基石的存储系统的要求越来越高，存储系统需要具备大容量、低成本、高性能。而目前主流的任何一种存储设备如固态盘、磁盘由于各种限制不能单独构建出同时满足上述要求的存储系统。混合存储系统充分利用不同存储设备特性的互补构建高效的存储系统，使得在保证成本不大幅上升的前提下能支持提供大容量同时具有高性能，因此混合存储系统是当前的研究热点。 
 
-本文首先介绍了混合存储系统的基本概念并对目前主流存储设备进行了比较，然后对依据所依赖的存储设备所区分的几种不同的混合存储系统模式进行了研究分析。之后对混合存储系统在设计中锁涉及的关键技术进行了归纳分析。然后从这些关键技术的角度对三个开源混合存储系统进行了分析，并对他们的特性以及性能进行了对比分析。在此基础上设计并实现了基于SSD和HDD的SSD缓存系统qscache，本文主要的工作如下：
+本文首先介绍了混合存储系统的基本概念并对目前主流存储设备进行了比较，然后对依据所依赖的存储设备所区分的几种不同的混合存储系统模式进行了研究分析。之后对混合存储系统在设计中所涉及的关键技术进行了归纳分析。然后从这些关键技术的角度对三个开源混合存储系统进行了分析，并对他们的特性以及性能进行了对比分析。在此基础上设计并实现了基于SSD和HDD的SSD缓存系统qscache，本文主要的工作如下：
 
 \begin{enumerate}[wide]
-    \item 对当前主流的存储设备进行研究，并对这些存储设备的顺序读写性能、随机读写性能、成本、容量进行了分析对比。
+    \item 对当前主流的存储设备进行研究，并对这些存储设备的顺序读写性能、随机读写性能、成本、容量进行了分析比较。
     \item 对混合存储系统的不同模式进行了研究并分析总结了混合存储系统在设计中的关键技术。
     \item 对三个开源混合存储系统从系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合的角度进行了研究，分析对比了它们的随机读写性能与顺序读写性能以及他们的可靠性、系统额外开销等特性。
     \item 设计并实现了qscache系统，包括系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合等。
@@ -25,7 +25,7 @@
 
 \begin{englishabstract}
 
-With the rapid development of cloud computing and big data, the storage system, which is the cornerstone, needs to provide high storage capacity and high performance at low cost. While at present any one of the storage devices, such as solid state disk and hard disk drive, can not meet the above requirements alone due to various limitations. Hybrid storage system takes full advantage of the characteristics of different storage device to support large-capacity, but also ensures high performance at low cost. Therefore, hybrid storage system is becoming the current research focus. 
+With the rapid development of cloud computing and big data, the storage system, which is the cornerstone, needs to provide high storage capacity and high performance at low cost. While at present any one of the storage devices, such as solid state disk and hard disk drive, can not meet the above requirements alone due to various limitations. Hybrid storage system takes full advantage of the characteristics of different storage device to support large-capacity, but also ensures high performance without too much extra cost. Therefore, hybrid storage system is the current research focus. 
 
 This paper introduced the basic concepts of hybrid storage systems and studies the current wide-used storage devices first. Then, several different hybrid storage system modes that are distinguished by the based storage devices were studied. After that, the key technologies in the design of hybrid storage system were studied and summarized. Then from the perspective of these key technologies, three open source hybrid storage systems were analyzed, and their characteristics and performance were compared. Based on this, the SSD cache system based on SSD and HDD, qscache was designed and implemented. The main work of this paper is as follows:
 

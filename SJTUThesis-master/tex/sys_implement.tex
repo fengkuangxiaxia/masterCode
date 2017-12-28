@@ -11,7 +11,7 @@
 
 \section{qscache系统底层结构}
 
-由于qscache系统本质是一个块设备，其位于Linux内核态，因此需要对qscache系统在内核中实现所依赖的底层结构、数据结构、机制进行分析，包括Linux的存储层次、bio的数据结构、Device Mapper机制等。
+由于qscache系统本质是一个块设备，其位于Linux内核态作为一个模块被加载，因此需要对qscache系统在内核中实现所依赖的底层结构、数据结构、机制进行分析，包括Linux的存储层次、bio的数据结构、Device Mapper机制等。
 
 \subsection{Linux存储层次}
 
@@ -53,7 +53,7 @@ bio的具体结构如图\ref{fig:bio}所示。一个bio指针指向的是由多�
 
 \subsection{Device Mapper}
 
-Device Mapper是在Linux2.6内核中引入的支持逻辑卷管理的通用设备映射机制，它提供了一个高度模块化的内核架构用以实现负责管理存储资源的块设备驱动\cite{bovet2005understanding}。Device Mapper以一个块设备驱动在内核中注册，它主要由mapped device、mapping table、target device这三个部分组成。mapped device可以理解为内核对外提供的逻辑设备，用户看到的也是这个逻辑设备，mapped device通过mapping table组织与与target device的映射关系，一个mapped device可以映射到一个或者多个target device上，总体层次如图\ref{fig:device_mapper}所示，target device可以是真实的物理设备也可以是另一个mapped device，如此迭代，形成一个树状结构。
+Device Mapper是在Linux2.6内核中引入的支持逻辑卷管理的通用设备映射机制，它提供了一个高度模块化的内核架构用以实现负责管理存储资源的块设备驱动\cite{bovet2005understanding}。Device Mapper以一个块设备驱动在内核中注册，它主要由mapped device、mapping table、target device这三个部分组成。mapped device即内核对外提供的逻辑设备，用户看到的也是这个逻辑设备，mapped device通过mapping table组织与与target device的映射关系，一个mapped device可以映射到一个或者多个target device上，总体层次如图\ref{fig:device_mapper}所示，target device可以是真实的物理设备也可以是另一个mapped device，如此迭代，形成一个树状结构。
 
 \begin{figure}[!htbp]
     \centering
@@ -98,7 +98,7 @@ qscache系统基于Linux的Device Mapper实现，通过研究Linux内核中Devic
     \end{tabular}
 \end{table}
 
-另外qscache系统对于I/O带宽按权限进行分配的功能将通过使用Linux自带的I/O调度器的CFQ策略，通过为不同进程设置不同的cgroup的weight实现对这些进程按照权重不同分配不同的I/O带宽，但是由于I/O调度器只对request队列起作用，对bio不起作用，因此qscache系统将实现基于bio模式启动与基于request模式启动，对于不同的模式分别定义不同的target\_type然后在模块加载时注册不同的target\_type就以不同模式启动了。但是本研究发现现有的Device Mapper提供的target\_type并不能很好地实现基于request的模式，因此下面将分别对基于bio模式与基于request模式的公用接口函数的实现、基于bio模式的实现以及基于request模式的实现展开详细介绍。
+另外qscache系统对于I/O带宽按权限进行分配的功能将通过使用Linux自带的I/O调度器的CFQ策略，通过为不同进程设置不同的cgroup的weight实现对这些进程按照权重不同分配不同的I/O带宽，但是由于I/O调度器基于权限的调度只对request队列起作用，对bio不起作用，因此qscache系统将实现基于bio与基于request两种模式，对于不同的模式分别定义不同的target\_type然后在模块加载时注册不同的target\_type就以不同模式启动了。但是本研究发现现有的Device Mapper提供的target\_type并不能很好地实现基于request的模式，因此下面将分别对基于bio模式与基于request模式的公用接口函数的实现、基于bio模式的实现以及基于request模式的实现展开详细介绍。
 
 \subsection{公用接口函数的实现}
 
@@ -122,9 +122,9 @@ iterate\_devices接口负责遍历系统所管理的缓存设备和后台设备�
 
 \subsection{基于bio模式的实现}
 
-基于bio模式的实现主要是target\_type中map接口的实现，map是整个系统数据的入口，map负责对bio请求进行解析，并根据请求的操作类型分别交由不同函数处理。
+基于bio模式的实现主要是target\_type中map接口的实现，map是整个系统数据的入口，map负责对bio请求进行解析，并将请求依据操作类型调用不同函数处理。
 
-对于读请求的处理如图\ref{fig:qscache_map_read}所示。
+对于读请求的处理如图\ref{fig:qscache_map_read}所示。首先判断请求是否为可以被缓存的请求，判断的依据是判断进程是否在黑名单中以及依据参数的设置决定是否要缓存顺序请求，如果不能被缓存则直接提交到后台设备执行读操作，如果可以被缓存，则首先在缓存设备中查找数据块，如果找到对应数据块，则将请求提交到缓存上执行读操作，如果没有找到数据块，则将请求提交到后台设备上执行读操作，并根据操作是否可以被缓存以及数据块的热度决定是否要替换缓存块执行对应的缓存块操作。
 
 \begin{figure}[!htbp]
     \centering
@@ -132,11 +132,7 @@ iterate\_devices接口负责遍历系统所管理的缓存设备和后台设备�
     \bicaption[fig:qscache_map_read]{qscache的map接口读请求处理}{qscache的map接口读请求处理}{Fig.}{process of qscache map read}
 \end{figure}
 
-首先判断请求是否为可以被缓存的请求，判断的依据是判断进程是否在黑名单中以及依据参数的设置决定是否要缓存顺序请求，如果不能被缓存则直接提交到后台设备执行读操作，如果可以被缓存，则首先在缓存设备中查找数据块，如果找到对应数据块，则将请求提交到缓存上执行读操作，如果没有找到数据块，则将请求提交到后台设备上执行读操作，并根据操作是否可以被缓存以及数据块的热度决定是否要替换缓存块执行对应的缓存块操作。
-
-
-对于写请求的处理如图\ref{fig:qscache_map_write}所示。
-
+对于写请求的处理如图\ref{fig:qscache_map_write}所示。首先判断请求是否为可以被缓存的请求，判断的依据是判断进程是否在黑名单中以及依据参数的设置决定是否要缓存顺序请求，如果不能被缓存则直接提交到后台设备执行写操作，如果可以被缓存，则首先在缓存设备中查找数据块，如果找到对应数据块，则将请求提交到缓存上执行写操作，并判断是否为写穿模式，如果为写穿模式则也将请求提交到后台设备上执行写操作，如果没有找到数据块，则将请求提交到后台设备上执行写操作，并根据操作是否可以被缓存以及数据块的热度决定是否要替换缓存块执行对应的缓存块操作。
 
 \begin{figure}[!htbp]
     \centering
@@ -144,12 +140,9 @@ iterate\_devices接口负责遍历系统所管理的缓存设备和后台设备�
     \bicaption[fig:qscache_map_write]{qscache的map接口写请求处理}{qscache的map接口写请求处理}{Fig.}{process of qscache map write}
 \end{figure}
 
-首先判断请求是否为可以被缓存的请求，判断的依据是判断进程是否在黑名单中以及依据参数的设置决定是否要缓存顺序请求，如果不能被缓存则直接提交到后台设备执行写操作，如果可以被缓存，则首先在缓存设备中查找数据块，如果找到对应数据块，则将请求提交到缓存上执行写操作，并判断是否为写穿模式，如果为写穿模式则也将请求提交到后台设备上执行写操作，如果没有找到数据块，则将请求提交到后台设备上执行写操作，并根据操作是否可以被缓存以及数据块的热度决定是否要替换缓存块执行对应的缓存块操作。
-
-
 \subsection{基于request模式的实现}
 
-本研究发现现有的Device Mapper的实现中，仅有multipath\_target是基于request的target\_type，而在multipath\_target中map\_rq的实现multipath\_map仅仅是改变request队列然后返回DM\_MAPIO\_REMAPPED，而混合存储系统中map\_rq必须负责将对mapped device的请求映射到低层的设备因此不能仅仅像multipath\_target中map\_rq的实现一样简单。因此需要实现一个新的接口。在target\_type中添加make\_rq接口实现用bio生成request，然后依靠map\_rq将请求映射到不同的低层设备。
+本研究发现现有的内核中基于Device Mapper的实现中由target\_type的map\_rq接口实现对request的重映射，对应到混合存储系统中map\_rq应该负责将对mapped device的请求映射到低层的设备，但是qscache系统需要实现基于bio和基于request两种模式，因此默认接收bio请求，在设置为基于request模式下，将收到的bio请求生成request，以实现基于request的模式。因此需要实现一个新的接口用以负责将bio请求生成request。在target\_type中对应添加make\_rq接口，然后依靠map\_rq将生成的request请求映射到不同的低层设备。
 
 对Linux的内核作出的具体修改如下：
 
@@ -208,12 +201,12 @@ dm\_io\_async\_bvec()的处理流程如图\ref{fig:process_dm_io_async_bvec}所�
 
 \section{系统信息组织与管理的实现}
 
-qscache系统的系统信息由数据结构cache\_c进行统一管理，该结构为一全局变量。cache\_c中的主要成员类型及其作用如表\ref{tab:cache_c}所示。其他诸如黑名单、白名单也在cache\_c中。相关冷热数据识别要用到的数据结构，则以set为单位存放在cache\_sets这一结构体中。
+qscache系统的系统信息由数据结构global\_context进行统一管理，该结构为一全局变量。global\_context中的主要成员类型及其作用如表\ref{tab:global_context}所示。其他诸如黑名单、白名单也在global\_context中。相关冷热数据识别要用到的数据结构，则以set为单位存放在cache\_sets这一结构体中。
 
 \begin{table}[!htbp]
     \zihao{5}
     \centering
-    \bicaption[tab:cache_c]{cache\_c的主要成员类型及作用}{cache\_c的主要成员类型及作用}{Table}{structure of cache\_c}
+    \bicaption[tab:global_context]{global\_context的主要成员类型及作用}{global\_context的主要成员类型及作用}{Table}{structure of global\_context}
     \begin{tabular}{ccc} 
         \toprule
         成员 & 类型 & 作用\\
@@ -249,4 +242,4 @@ qscache系统的系统信息由数据结构cache\_c进行统一管理，该结�
 
 
 \section{本章小结}
-本章介绍了qscache系统在实现中需要的预备知识以及具体的实现方法。预备知识主要介绍了Linux存储层次、bio和Device Mapper。具体的实现方法主要介绍了基于Device Mapper机制的系统架构实现、系统信息组织与管理的实现、冷热数据识别算法的实现以及多缓存设备对多后台设备的实现，并且详细地介绍了如何修改Device Mapper的代码以支持基于request的混合存储系统的实现以及qscache基于bio和基于request两种模式的实现。
+本章介绍了qscache系统在实现中依赖的底层结构以及具体的实现方法。底层结构主要分析了Linux存储层次、bio的数据结构和Device Mapper机制。具体的实现方法主要介绍了基于Device Mapper机制的系统架构实现、系统信息组织与管理的实现、冷热数据识别算法的实现以及多缓存设备对多后台设备的实现，并且详细地介绍了如何修改Device Mapper的代码以支持基于request的混合存储系统的实现以及qscache基于bio和基于request两种模式的实现。

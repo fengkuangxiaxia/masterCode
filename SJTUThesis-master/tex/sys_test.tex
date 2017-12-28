@@ -74,7 +74,7 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
     \item 基于bio的qscache的初始化
     \begin{enumerate}
         \item 编译，需要内核的源码树：make KERNEL\_TREE=/usr/src/linux-3.10.108/
-        \item 加载，以基于request的模式加载：insmod src/qscache.ko request\_based=0
+        \item 加载，以基于bio的模式加载：insmod src/qscache.ko request\_based=0
         \item 以写回模式创建系统，缓存设备容量120GB，后台设备容量1TB，mapped device命名为cachedev：qscache\_create -p back -n cachedev -c /dev/sdb -h /dev/sdi
     \end{enumerate}
     \item 基于request的qscache的初始化
@@ -87,7 +87,7 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
 
 \subsection{顺序读写性能对比}
 
-顺序读写性能使用fio进行对比测试，文件大小为4GB，块大小从4KB到16MB，命令为fio -filename=/dev/mapper/cachedev -direct=1 -iodepth1 -thread -rw=RW -ioengine=libaio -bs=BS -size=4G -numjobs=8 -runtime=30 -name=readtest，通过设置BS来设置块大小，通过设置RW为read或write来设置顺序读或顺序写。顺序读写性能测试结果如表\ref{tab:seq_comparison}所示。
+顺序读写性能使用fio进行测试，文件大小为4GB，块大小从4KB到16MB，命令为fio -filename=/dev/mapper/cachedev -direct=1 -iodepth1 -thread -rw=RW -ioengine=libaio -bs=BS -size=4G -numjobs=8 -runtime=30 -name=readtest，通过设置BS来设置块大小，通过设置RW为read或write来设置顺序读或顺序写。顺序读写性能测试结果如表\ref{tab:seq_comparison}所示。
 
 \begin{table}[!ht]
     \zihao{5}
@@ -135,7 +135,7 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
 
 \subsection{随机读写性能对比}
 
-随机读写性能使用fio进行对比测试，文件大小为4GB，块大小从4KB到16MB，命令为fio -filename=/dev/mapper/cachedev -direct=1 -iodepth1 -thread -rw=RW -ioengine=libaio -bs=BS -size=4G -numjobs=8 -runtime=30 -name=readtest，通过设置BS来设置块大小，通过设置RW为randread、randwrite或randrw来设置随机读、随机写或混合随机读写。随机读写性能测试结果如表\ref{tab:rand_comparison_1}及表\ref{tab:rand_comparison_2}所示。
+随机读写性能使用fio进行测试，文件大小为4GB，块大小从4KB到16MB，命令为fio -filename=/dev/mapper/cachedev -direct=1 -iodepth1 -thread -rw=RW -ioengine=libaio -bs=BS -size=4G -numjobs=8 -runtime=30 -name=readtest，通过设置BS来设置块大小，通过设置RW为randread、randwrite或randrw来设置随机读、随机写或混合随机读写。随机读写性能测试结果如表\ref{tab:rand_comparison_1}及表\ref{tab:rand_comparison_2}所示。
 
 \begin{table}[H]
     \zihao{5}
@@ -186,7 +186,9 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
     \bicaption[fig:rand_write_comparison]{HDD、flashcache、qscache随机写性能对比图}{HDD、flashcache、qscache随机写性能对比图}{Fig.}{ random write performance contrast among HDD, flashcache and qscache}
 \end{figure}
 
-另外可以发现相比顺序读写测试，随机读写测试下flashcache和两种模式的request的性能随着I/O的增大性能的波动更大，这是由于当I/O块增大时，每个随机I/O块覆盖的连续数据块更多，因此对越大的I/O块，更有可能被判断为顺序读写的一部分而将操作定性为不需要缓存的操作，从而将这些I/O操作绕过缓存直接在HDD上执行，因此性能产生比较大的波动。
+其次可以发现相比顺序读写测试，随机读写测试下flashcache和两种模式的qscache的性能随着I/O的增大性能的波动更大，这是由于当I/O块增大时，每个随机I/O块覆盖的连续数据块更多，因此对越大的I/O块，更有可能被判断为顺序读写的一部分而将操作定性为不需要缓存的操作，从而将这些I/O操作绕过缓存直接在HDD上执行，因此性能产生比较大的波动。
+
+另外注意到基于request的qscache的随机写性能比随机读性能衰减得更厉害，这是由于基于request模式下，request队列的I/O调度默认使用deadline调度策略，在该策略下，会有读I/O的FIFO队列以及写I/O的FIFO队列，读队列最大等待时间为500ms，写队列最大等待时间为5s，之所以会等待是为了在使用HDD时将相邻I/O合并从而提升性能，但是对qscache系统而言，多数请求会落在SSD上执行，但对SSD而言是否合并相邻I/O对性能意义不大。因此相应的写队列更长的等待时间导致写性能更差。
 
 \section{I/O带宽按权限分配测试}
 
@@ -204,7 +206,7 @@ qscache以基于request的模式启动，初始化操作如下：
 \begin{table}[!hpb]
     \zihao{5}
     \centering
-    \bicaption[tab:qscache_io_test]{qscacheI/O带宽按权限分配测试}{qscacheI/O带宽按权限分配测试}{Table}{qscache I/O quota test}
+    \bicaption[tab:qscache_io_test]{qscache I/O带宽按权限分配测试}{qscache I/O带宽按权限分配测试}{Table}{qscache  I/O quota test}
     \begin{tabular}{@{}cccccccccc@{}} 
         \toprule
         \multicolumn{5}{c}{weight} & \multicolumn{5}{c}{IOPS}\\

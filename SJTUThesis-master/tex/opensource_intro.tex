@@ -7,13 +7,13 @@
 \chapter{开源混合存储系统分析}
 \label{chap:opensource_intro}
 
-目前，开源的混合存储系统中被使用较为广泛的是flashcache、dm-cache、bcache这三个系统，但是对于这三个系统的研究主要集中在对他们的算法研究\cite{杨宗2013flashcache, 唐华敏2015bcache}，而对他们的对比较少。本章将首先对flashcache、dm-cache、bcache这三个开源混合存储系统分别从系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合进行介绍，然后对他们从性能和特性两方面进行对比分析。
+目前，开源的混合存储系统中被使用较为广泛的是flashcache、dm-cache、bcache这三个系统，但是对于这三个系统的研究主要集中在对他们的算法研究\cite{杨宗2013flashcache, 唐华敏2015bcache}，而对他们的对比分析比较少。本章将首先对flashcache、dm-cache、bcache这三个开源混合存储系统分别从系统架构、数据映射策略、冷热数据识别策略、数据写回/迁移策略、最优化存储设备组合进行介绍，然后对他们从性能和特性两方面进行对比分析。
 
 \section{flashcache}
 
 \subsection{系统架构}
 
-flashcache基于device mapper，采用分层架构，将缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
+flashcache基于Device Mapper，采用分层架构，将缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
 
 \subsection{数据映射策略}
 \label{sec:flashcache_mapping}
@@ -40,13 +40,13 @@ flashcache在每次I/O调用及每次I/O调用的回调时触发将脏数据从�
 
 \subsection{最优化存储设备组合}
 
-flashcache采用静态策略，并且限制缓存设备与后台设备都只能有一个。
+flashcache采用静态策略，并且限制在创建混合存储系统时，缓存设备与后台设备都只能有一个。
 
 \section{dm-cache}
 
 \subsection{系统架构}
 
-dm-cache基于device mapper，采用分层架构，将缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
+dm-cache基于Device Mapper，并且已进入Linux内核主线，因此与Linux内核的Device Mapper结合更加紧密，dm-cache中许多函数的实现直接依赖于对Device Mapper相关库中的函数的调用。
 
 \subsection{数据映射策略}
 
@@ -62,13 +62,13 @@ dm-cache在每次I/O调用时触发将脏数据从缓存设备写回到后台设
 
 \subsection{最优化存储设备组合}
 
-dm-cache采用静态策略，并且限制缓存设备与后台设备都只能有一个。
+dm-cache采用静态策略，并且限制在创建混合存储系统时，缓存设备与后台设备都只能有一个。
 
 \section{bcache}
 
 \subsection{系统架构}
 
-bcache没有采用device mapper而是自己实现了一套系统，采用分层架构，将缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
+bcache没有采用Device Mapper而是自己实现了一套系统，采用分层架构，将缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
 
 \subsection{数据映射策略}
 
@@ -84,7 +84,7 @@ bcache当bucket使用超过阈值时会触发垃圾回收，或者当用作缓�
 
 \subsection{最优化存储设备组合}
 
-bcache采用动态策略，虽然限制缓存设备只能有一个，但支持多个后台设备并且在运行中动态增加。
+bcache采用动态策略，bcache并不是通过单条语句创建相应的bcache设备，而是分为添加缓存设备与添加后台设备的语句，当添加后台设备后自动出现相应的bcache设备，之后仍可以通过相应命令动态增加设备。目前bcache对于动态增加后台设备有比较好的支持，但对于动态增加缓存设备还处于初步阶段。
 
 \section{对比分析}
 
