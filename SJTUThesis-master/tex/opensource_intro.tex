@@ -13,7 +13,7 @@
 
 \subsection{系统架构}
 
-flashcache基于Device Mapper，采用分层架构，将缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
+flashcache基于Device Mapper，采用分层架构，将缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存\cite{kgil2006flashcache}。
 
 \subsection{数据映射策略}
 \label{sec:flashcache_mapping}
@@ -68,7 +68,7 @@ dm-cache采用静态策略，并且限制在创建混合存储系统时，缓存
 
 \subsection{系统架构}
 
-bcache没有采用Device Mapper而是自己实现了一套系统，采用分层架构，将缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存。
+bcache没有采用Device Mapper而是自己实现了一套系统，采用分层架构，将缓存设备与后台设备统和为一块逻辑设备，缓存设备作为后台设备的数据缓存\cite{stearns2010bcache}。
 
 \subsection{数据映射策略}
 

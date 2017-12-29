@@ -97,7 +97,7 @@ SSD作为HDD缓存的分层架构的结构如图\ref{fig:multi_layer_architectur
 
 \subsubsection{HDD作为SSD缓存的分层架构}
 
-一般而言，SSD被用作HDD的缓存是由于其优异的随机读写性能，但是一方面存在中低端的SSD的随机读写性能反而不如一些HDD的情况，另一方面为了延长SSD的寿命，因此有的研究着眼于将HDD作为SSD的缓存\cite{soundararajan2010extending}。在该架构下，对于SSD上数据的更新以追加日志的方式缓存在HDD上，然后根据一定的判断准则将其批量迁移回SSD。该架构主要是将大部分写操作放到HDD上进行，而让SSD处理随机读操作，以此减少对SSD的磨损并对外提供高性能。
+一般而言，SSD被用作HDD的缓存是由于其优异的随机读写性能，但是一方面存在中低端的SSD的随机读写性能反而不如一些HDD的情况，另一方面为了延长SSD的寿命，因此有的研究着眼于将HDD作为SSD的缓存\cite{soundararajan2010extending, yang2011hybrid, mao2012hpda}。在该架构下，对于SSD上数据的更新以追加日志的方式缓存在HDD上，然后根据一定的判断准则将其批量迁移回SSD。该架构主要是将大部分写操作放到HDD上进行，而让SSD处理随机读操作，以此减少对SSD的磨损并对外提供高性能。
 
 \subsubsection{同层架构}
 
