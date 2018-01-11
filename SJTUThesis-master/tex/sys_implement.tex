@@ -77,6 +77,9 @@ qscache系统基于Linux的Device Mapper实现，通过研究Linux内核中Devic
     \zihao{5}
     \centering
     \bicaption[tab:target_type]{target\_type的主要成员类型及作用}{target\_type的主要成员类型及作用}{Table}{structure of target\_type}
+
+    \vskip 1pt
+
     \begin{tabular}{ccc} 
         \toprule
         成员 & 类型 & 作用\\
@@ -149,7 +152,7 @@ iterate\_devices接口负责遍历系统所管理的缓存设备和后台设备�
 \begin{enumerate}[wide]
     \item include/linux/dm-io.h文件对dm\_io\_request结构体添加三个变量，submit\_bio用以表示是否直接提交bio，start和end为两个bio指针，指向该dm\_io\_request的起始bio和终止bio。
     \item drivers/md/dm-io.c文件，do\_region改为接收dm\_io\_request类型参数，依据dm\_io\_request类型的参数中submit\_bio的设置判断是直接提交bio还是放入request中。dispatch\_io改为接收dm\_io\_request类型参数，相关操作包括对do\_region的调用相应改为基于dm\_io\_request类型的操作。sync\_io改为接收dm\_io\_request类型参数，相关操作包括对dispatch\_io的调用相应改为基于dm\_io\_request类型的操作。async\_io改为接收dm\_io\_request类型参数，相关操作包括对dispatch\_io的调用相应改为基于dm\_io\_request类型的操作。dm\_io中对sync\_io和async\_io的调用都改为传递dm\_io\_request类型参数。
-    \item include/linux/device-mapper.h文件中对target\_type结构体添加函数指针make\_rq作为新的新接口，用以支持自己对request的生成。
+    \item include/linux/device-mapper.h文件中对target\_type结构体添加函数指针make\_rq作为新的接口，用以支持自己对request的生成。
     \item drivers/md/dm.c文件，dm\_request原本只是简单地判断mapped device是基于request还是基于bio，并据此分别调用blk\_queue\_bio或\_dm\_request。现在首先从映射表中获得mapped device，查看是否实现了具体的make\_rq方法，如果实现了则调用该方法然后返回，否则依旧根据是基于request还是基于bio分别调用blk\_queue\_bio或\_dm\_request，流程如图\ref{fig:dm_request}所示。
 
     \begin{figure}[!htbp]
@@ -207,6 +210,9 @@ qscache系统的系统信息由数据结构global\_context进行统一管理，�
     \zihao{5}
     \centering
     \bicaption[tab:global_context]{global\_context的主要成员类型及作用}{global\_context的主要成员类型及作用}{Table}{structure of global\_context}
+
+    \vskip 1pt
+
     \begin{tabular}{ccc} 
         \toprule
         成员 & 类型 & 作用\\

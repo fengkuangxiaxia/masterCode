@@ -93,6 +93,7 @@
 
 \setcounter{secnumdepth}{4}  % 章节编号深度 (part 对应 -1)
 \setcounter{tocdepth}{2}     % 目录深度 (part 对应 -1)
+
     
 % User defined command list
 %% \me \mi \mj \dif \cleardoublepage \cndash \CJKLaTeX
@@ -494,7 +495,7 @@
       \fancyhead[L]{}
       \fancyhead[R]{}
       \fancyhead[C]{\songti\zihao{-5}\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
-      \fancyfoot[C]{\small ---~{\bfseries\thepage}~---}
+      \fancyfoot[C]{\small -~{\bfseries\thepage}~-}
       %\renewcommand\headrule{\vskip-1.7\headheight\hrulefill\vskip2pt\hrulefill}
 	    \renewcommand{\headheight}{32pt}
 	  }
@@ -504,7 +505,7 @@
       \fancyhead[L]{}
       \fancyhead[R]{}
       \fancyhead[C]{\songti\zihao{-5}\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
-	    \fancyfoot[C]{\small ---~{\bf\thepage}~---}
+	    \fancyfoot[C]{\small -~{\bf\thepage}~-}
 	    \renewcommand{\headheight}{32pt}
 	  }
 	\else
@@ -513,7 +514,7 @@
 	  \fancyhead[L]{}
     \fancyhead[R]{}
     \fancyhead[C]{\songti\zihao{-5}\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
-	  \fancyfoot[C]{\small ---~{\bf\thepage}~---}
+	  \fancyfoot[C]{\small -~{\bf\thepage}~-}
 	  \renewcommand{\headheight}{32pt}
 	}
 	\fancypagestyle{plain}{
@@ -522,7 +523,7 @@
     \fancyhead[R]{}
     \fancyhead[C]{\songti\zihao{-5}\sjtu@value@school\sjtu@value@chinesedegree\sjtu@label@thesis}
 	  % \fancyhead[L]{\small {\it\sjtu@value@titlemark}}
-	  \fancyfoot[C]{\small ---~{\bf\thepage}~---}
+	  \fancyfoot[C]{\small -~{\bf\thepage}~-}
 	  \renewcommand{\headheight}{32pt}
 	}
 	\fi

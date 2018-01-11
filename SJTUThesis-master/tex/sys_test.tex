@@ -29,6 +29,9 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
     \zihao{5}
     \centering
     \bicaption[tab:qscache_test_environment]{qscache性能测试环境}{qscache性能测试环境}{Table}{test environment of qscache}
+
+    \vskip 1pt
+
     \begin{tabular}{cc} \toprule
       机器类型 & 普通台式机 \\ \midrule
       CPU & 单核AMD CPU\\
@@ -87,12 +90,15 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
 
 \subsection{顺序读写性能对比}
 
-顺序读写性能使用fio进行测试，文件大小为4GB，块大小从4KB到16MB，命令为fio -filename=/dev/mapper/cachedev -direct=1 -iodepth1 -thread -rw=RW -ioengine=libaio -bs=BS -size=4G -numjobs=8 -runtime=30 -name=readtest，通过设置BS来设置块大小，通过设置RW为read或write来设置顺序读或顺序写。顺序读写性能测试结果如表\ref{tab:seq_comparison}所示。
+顺序读写性能使用fio进行测试，文件大小为4GB，块大小从4KB到16MB，命令为fio -filename=/dev/mapper/cachedev -direct=1 -iodepth1 -thread -rw=RW -ioengine=libaio -bs=BS -size=4G -numjobs=8 -runtime=30 -name=test，通过设置BS来设置块大小，通过设置RW为read或write来设置顺序读或顺序写。顺序读写性能测试结果如表\ref{tab:seq_comparison}所示。
 
 \begin{table}[!ht]
     \zihao{5}
     \centering
     \bicaption[tab:seq_comparison]{HDD、flashcache、qscache顺序读写性能}{HDD、flashcache、qscache顺序读写性能（KB/s）}{Table}{ sequential I/O performance contrast among HDD, flashcache and qscache(KB/s)}
+
+    \vskip 1pt
+
     \begin{tabular}{@{}ccccccccc@{}} 
       \toprule
       \multirow{2}*{块大小} & \multicolumn{2}{c}{HDD} & \multicolumn{2}{c}{flashcache} & \multicolumn{2}{c}{bio-qscache} & \multicolumn{2}{c}{request-qscache}\\
@@ -135,12 +141,15 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
 
 \subsection{随机读写性能对比}
 
-随机读写性能使用fio进行测试，文件大小为4GB，块大小从4KB到16MB，命令为fio -filename=/dev/mapper/cachedev -direct=1 -iodepth1 -thread -rw=RW -ioengine=libaio -bs=BS -size=4G -numjobs=8 -runtime=30 -name=readtest，通过设置BS来设置块大小，通过设置RW为randread、randwrite或randrw来设置随机读、随机写或混合随机读写。随机读写性能测试结果如表\ref{tab:rand_comparison_1}及表\ref{tab:rand_comparison_2}所示。
+随机读写性能使用fio进行测试，文件大小为4GB，块大小从4KB到16MB，命令为fio -filename=/dev/mapper/cachedev -direct=1 -iodepth1 -thread -rw=RW -ioengine=libaio -bs=BS -size=4G -numjobs=8 -runtime=30 -name=test，通过设置BS来设置块大小，通过设置RW为randread、randwrite或randrw来设置随机读、随机写或混合随机读写。随机读写性能测试结果如表\ref{tab:rand_comparison_1}及表\ref{tab:rand_comparison_2}所示。
 
 \begin{table}[H]
     \zihao{5}
     \centering
     \bicaption[tab:rand_comparison_1]{HDD、flashcache、qscache随机读写性能}{HDD、flashcache、qscache随机读写性能（IOPS）}{Table}{ random I/O performance contrast among HDD, flashcache and qscache(IOPS)}
+
+    \vskip 1pt
+
     \begin{tabular}{@{}ccccccccc@{}} 
       \toprule
       \multirow{2}*{块大小} & \multicolumn{3}{c}{HDD} & \multicolumn{3}{c}{flashcache} \\
@@ -158,6 +167,9 @@ qscache系统中，缓存设备与后台设备作为Device Mapper的target devic
     \zihao{5}
     \centering
     \bicaption[tab:rand_comparison_2]{HDD、flashcache、qscache随机读写性能（续）}{HDD、flashcache、qscache随机读写性能（IOPS）（续）}{Table}{ random I/O performance contrast among HDD, flashcache and qscache(IOPS)(continued)}
+
+    \vskip 1pt
+
     \begin{tabular}{@{}ccccccccc@{}} 
       \toprule
       \multirow{2}*{块大小} & \multicolumn{3}{c}{bio-qscache} & \multicolumn{3}{c}{request-qscache}\\
@@ -201,12 +213,15 @@ qscache以基于request的模式启动，初始化操作如下：
     \item I/O scheduler使用cfq：echo cfq > /sys/block/dm-2/queue/scheduler
 \end{enumerate}
 
-对I/O带宽按权限分配的测试采用fio工具，通过设置fio的不同group的cgroup的weight设置不同测试进程的权限值并测试他们对系统的mapped device的读写性能是否按照权限进行分配。测试结果如表\ref{tab:qscache_io_test}所示，分多组测试，每组测试的cgroup的weight分别设置不同值，可以看到每组测试中I/O带宽按照权重分配了。
+对I/O带宽按权限分配的测试采用fio工具，通过设置fio的不同group的cgroup的weight设置不同测试进程的权限值并测试他们的读写性能是否按照权限进行分配。测试结果如表\ref{tab:qscache_io_test}所示，分多组测试，每组测试的cgroup的weight分别设置不同值，可以看到每组测试中I/O带宽按照权重分配了。
 
-\begin{table}[!hpb]
+\begin{table}[!htbp]
     \zihao{5}
     \centering
     \bicaption[tab:qscache_io_test]{qscache I/O带宽按权限分配测试}{qscache I/O带宽按权限分配测试}{Table}{qscache  I/O quota test}
+
+    \vskip 1pt
+
     \begin{tabular}{@{}cccccccccc@{}} 
         \toprule
         \multicolumn{5}{c}{weight} & \multicolumn{5}{c}{IOPS}\\
