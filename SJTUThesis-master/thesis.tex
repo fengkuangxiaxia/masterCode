@@ -31,18 +31,18 @@
 
 \makeatletter
 \ifsjtu@submit\relax
-	\includepdf{pdf/original.pdf}
-	\cleardoublepage
-	\includepdf{pdf/authorization.pdf}
-	\cleardoublepage
+	%\includepdf{pdf/original.pdf}
+	%\cleardoublepage
+	%\includepdf{pdf/authorization.pdf}
+	%\cleardoublepage
 \else
 \ifsjtu@review\relax
 % exclude the original claim and authorization
-  \makeDeclareOriginal
-	\makeDeclareAuthorization
+  %\makeDeclareOriginal
+	%\makeDeclareAuthorization
 \else
-	\makeDeclareOriginal
-	\makeDeclareAuthorization
+	%\makeDeclareOriginal
+	%\makeDeclareAuthorization
 \fi
 \fi
 \makeatother
